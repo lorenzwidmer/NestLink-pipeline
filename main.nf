@@ -22,11 +22,28 @@ process BamToFastq {
     path basecalled
 
     output:
-    path "${basecalled}.fastq.gz"
+    path "*.fastq.gz"
+
+    script:
+    def fastq_file = basecalled.toString().replace('.bam', '.fastq.gz')
+    """
+    samtools fastq $basecalled | gzip > $fastq_file
+    """
+}
+
+process RemoveBarcodes {
+    tag "Cutadapt on ${fastq_gz}"
+   //publishDir "${params.outdir}", mode: 'copy'
+
+    input:
+    path fastq_gz
+
+    output:
+    path "${fastq_gz}_cut.fastq.gz"
 
     script:
     """
-    samtools fastq $basecalled | gzip > ${basecalled}.fastq.gz
+    remove_barcodes.sh $fastq_gz
     """
 }
 
@@ -35,5 +52,6 @@ workflow {
     Channel
         .fromPath(params.data)
         .set { basecalled_channel }
-    BamToFastq(basecalled_channel)
+    fastq_gz = BamToFastq(basecalled_channel)
+    RemoveBarcodes(fastq_gz)
 }
