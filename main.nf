@@ -16,6 +16,7 @@ log.info """
 
 /* Processes */
 process BamToFastq {
+    //.baseName
     tag "Samtolls fastq on ${basecalled}"
 
     input:
@@ -39,11 +40,12 @@ process RemoveBarcodes {
     path fastq_gz
 
     output:
-    path "${fastq_gz}_cut.fastq.gz"
+    path "*_cut.fastq.gz"
 
     script:
+    def file_name = fastq_gz.toString().replace('.fastq.gz', '')
     """
-    remove_barcodes.sh $fastq_gz
+    remove_barcodes.sh $file_name
     """
 }
 
