@@ -1,5 +1,6 @@
+.DS_store
 .nextflow
 data
 results
 work
-.nextflow.log
+.nextflow.log*
