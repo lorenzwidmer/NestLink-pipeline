@@ -1,0 +1,11 @@
+name: NL-pipeline
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10.14
+  - cutadapt=4.8
+  - dnaio=1.2.0
+  - samtools=1.20
+  - minimap2=2.28
