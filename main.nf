@@ -17,7 +17,7 @@ log.info """
 /* Processes */
 process BamToFastq {
     //.baseName
-    tag "Samtolls fastq on ${basecalled}"
+    tag "Samtools fastq on ${basecalled}"
 
     input:
     path basecalled
