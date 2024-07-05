@@ -32,18 +32,40 @@ process BamToFastq {
     """
 }
 
-process RemoveBarcodes {
+process FilterReads {
+    cpus 1
+    conda "bioconda::filtlong=0.2.1"
+    tag "Filtlong on ${reads}"
+
+    input:
+    path reads
+
+    output:
+    path "*_filtered.fastq.gz"
+
+    script:
+    def baseName = reads.name.tokenize('.')[0]
+    """
+    filtlong --min_mean_q 97.5 --min_length 7500 --max_length 7900 ${reads} \
+        | gzip > ${baseName}_filtered.fastq.gz
+    """
+}
+
+process Cutadapt {
+    cpus 8
+    conda "bioconda::cutadapt=4.9"
     tag "Cutadapt on ${fastq_gz}"
 
     input:
     path fastq_gz
 
     output:
-    path "*_cut.fastq.gz"
+    path "*.fastq.gz"
 
     script:
     """
-    remove_barcodes.sh $fastq_gz
+    cutadapt -j $task.cpus -g atgccatagcatttttatcc...agcctgatacagattaaatc --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o fwd.fastq.gz ${fastq_gz}
+    cutadapt -j $task.cpus -g gatttaatctgtatcaggct...ggataaaaatgctatggcat --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o rev.fastq.gz ${fastq_gz}
     """
 }
 
