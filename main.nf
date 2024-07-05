@@ -73,7 +73,8 @@ process Cutadapt {
 workflow {
     Channel
         .fromPath(params.data)
-        .set { basecalled_channel }
-    fastq_gz = BamToFastq(basecalled_channel)
-    RemoveBarcodes(fastq_gz)
+        .set { basecalled_ch }
+    fastq_gz_ch = BamToFastq(basecalled_ch)
+    filtered_ch = FilterReads(fastq_gz_ch)
+    Cutadapt(filtered_ch)
 }
