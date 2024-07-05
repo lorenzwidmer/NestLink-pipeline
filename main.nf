@@ -16,18 +16,19 @@ log.info """
 
 /* Processes */
 process BamToFastq {
-    //.baseName
+    cpus 8
+    conda "bioconda::samtools=1.20"
     tag "Samtools fastq on ${basecalled}"
 
     input:
     path basecalled
 
     output:
-    path "*.fastq.gz"
+    path "${basecalled.baseName}.fastq.gz"
 
     script:
     """
-    samtools fastq $basecalled | gzip > "${basecalled.baseName}.fastq.gz"
+    samtools fastq --threads $task.cpus $basecalled | gzip > "${basecalled.baseName}.fastq.gz"
     """
 }
 
