@@ -53,19 +53,46 @@ process FilterReads {
 
 process Cutadapt {
     cpus 8
-    conda "bioconda::cutadapt=4.9"
+    conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2"
     tag "Cutadapt on ${fastq_gz}"
 
     input:
     path fastq_gz
 
     output:
-    path "*.fastq.gz"
+    path "*_cut.fastq.gz"
+
+    script:
+    def baseName = fastq_gz.name.tokenize('_')[0]
+    """
+    cutadapt -j $task.cpus -g atgccatagcatttttatcc...agcctgatacagattaaatc --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o fwd.fastq ${fastq_gz}
+    cutadapt -j $task.cpus -g gatttaatctgtatcaggct...ggataaaaatgctatggcat --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o rev.fastq ${fastq_gz}
+
+    seqkit seq --threads $task.cpus --reverse --complement rev.fastq --out-file rev_rc.fastq
+
+    cat fwd.fastq rev_rc.fastq > ${baseName}_cut.fastq
+    gzip ${baseName}_cut.fastq
+    """
+}
+
+process NestLink {
+    cpus 8
+    conda "bioconda::cutadapt=4.9 bioconda::minimap2=2.28 bioconda::samtools=1.20 bioconda::vsearch=2.28"
+
+    input:
+    path fastq_gz
 
     script:
     """
-    cutadapt -j $task.cpus -g atgccatagcatttttatcc...agcctgatacagattaaatc --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o fwd.fastq.gz ${fastq_gz}
-    cutadapt -j $task.cpus -g gatttaatctgtatcaggct...ggataaaaatgctatggcat --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o rev.fastq.gz ${fastq_gz}
+    cutadapt -j $task.cpus -g cagggccccTCAAGA...GGCCAAGGGGGTCAC --error-rate 0.2 --minimum-length 30 --maximum-length 50 --discard-untrimmed --fasta ${fastq_gz} > flycodes.fasta
+    mkdir flycode_clusters
+    vsearch -cluster_size \
+        flycodes.fasta \
+        -id 0.90 \
+        -sizeout \
+        -clusterout_id \
+        -centroids flycode_centroids.fasta \
+        -clusters flycode_clusters/cluster.fasta
     """
 }
 
@@ -76,5 +103,6 @@ workflow {
         .set { basecalled_ch }
     fastq_gz_ch = BamToFastq(basecalled_ch)
     filtered_ch = FilterReads(fastq_gz_ch)
-    Cutadapt(filtered_ch)
+    cut_ch = Cutadapt(filtered_ch)
+    NestLink(cut_ch)
 }
