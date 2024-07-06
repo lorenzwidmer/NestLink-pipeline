@@ -46,7 +46,7 @@ process FilterReads {
     script:
     def baseName = reads.name.tokenize('.')[0]
     """
-    filtlong --min_mean_q 97.5 --min_length 7500 --max_length 7900 ${reads} \
+    filtlong --min_mean_q 96.84 --min_length 7500 --max_length 7900 ${reads} \
         | gzip > ${baseName}_filtered.fastq.gz
     """
 }
