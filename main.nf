@@ -46,12 +46,13 @@ process FilterReads {
     script:
     def baseName = reads.name.tokenize('.')[0]
     """
-    filtlong --min_mean_q 96.84 --min_length 7500 --max_length 7900 ${reads} \
-        | gzip > ${baseName}_filtered.fastq.gz
+    filtlong --min_mean_q 96.84 \
+        --min_length 7500 --max_length 7900 \
+        ${reads} | gzip > ${baseName}_filtered.fastq.gz
     """
 }
 
-process Cutadapt {
+process ExtractGenes {
     cpus 8
     conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2"
     tag "Cutadapt on ${fastq_gz}"
@@ -65,29 +66,66 @@ process Cutadapt {
     script:
     def baseName = fastq_gz.name.tokenize('_')[0]
     """
-    cutadapt -j $task.cpus -g atgccatagcatttttatcc...agcctgatacagattaaatc --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o fwd.fastq ${fastq_gz}
-    cutadapt -j $task.cpus -g gatttaatctgtatcaggct...ggataaaaatgctatggcat --minimum-length 3839 --maximum-length 3939 --discard-untrimmed -o rev.fastq ${fastq_gz}
+    cutadapt -j $task.cpus \
+        -g atgccatagcatttttatcc...agcctgatacagattaaatc \
+        --minimum-length 3839 --maximum-length 3939 \
+        --discard-untrimmed \
+        -o fwd.fastq ${fastq_gz}
 
-    seqkit seq --threads $task.cpus --reverse --complement rev.fastq --out-file rev_rc.fastq
+    cutadapt -j $task.cpus \
+        -g gatttaatctgtatcaggct...ggataaaaatgctatggcat \
+        --minimum-length 3839 --maximum-length 3939 \
+        --discard-untrimmed \
+        -o rev.fastq ${fastq_gz}
+
+    seqkit seq --threads $task.cpus \
+        --reverse --complement rev.fastq \
+        --out-file rev_rc.fastq
 
     cat fwd.fastq rev_rc.fastq > ${baseName}_cut.fastq
     gzip ${baseName}_cut.fastq
     """
 }
 
-process NestLink {
+process ExtractFlycodes {
     cpus 8
-    conda "bioconda::cutadapt=4.9 bioconda::minimap2=2.28 bioconda::samtools=1.20 bioconda::vsearch=2.28"
+    conda "bioconda::cutadapt=4.9"
+    tag "Cutadapt on $fastq_gz"
 
     input:
     path fastq_gz
 
+    output:
+    path "flycodes.fasta"
+
     script:
     """
-    cutadapt -j $task.cpus -g cagggccccTCAAGA...GGCCAAGGGGGTCAC --error-rate 0.2 --minimum-length 30 --maximum-length 50 --discard-untrimmed --fasta ${fastq_gz} > flycodes.fasta
+    cutadapt -j $task.cpus \
+        -g cagggccccTCAAGA...GGCCAAGGGGGTCAC \
+        --error-rate 0.2 \
+        --minimum-length 30 --maximum-length 50 \
+        --discard-untrimmed \
+        --fasta ${fastq_gz} > flycodes.fasta
+    """
+}
+
+process ClusterFlycodes {
+    cpus 8
+    conda "bioconda::vsearch=2.28"
+    tag "Vsearch on $flycodes"
+
+    input:
+    path flycodes
+
+    output:
+    path "flycode_centroids.fasta"
+    path "flycode_clusters"
+
+    script:
+    """
     mkdir flycode_clusters
     vsearch -cluster_size \
-        flycodes.fasta \
+        $flycodes \
         -id 0.90 \
         -sizeout \
         -clusterout_id \
@@ -103,6 +141,7 @@ workflow {
         .set { basecalled_ch }
     fastq_gz_ch = BamToFastq(basecalled_ch)
     filtered_ch = FilterReads(fastq_gz_ch)
-    cut_ch = Cutadapt(filtered_ch)
-    NestLink(cut_ch)
+    genes_ch = ExtractGenes(filtered_ch)
+    flycodes_ch = ExtractFlycodes(genes_ch)
+    clusters_ch = ClusterFlycodes(flycodes_ch)
 }
