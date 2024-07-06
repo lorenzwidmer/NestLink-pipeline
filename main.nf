@@ -53,7 +53,7 @@ process FilterReads {
     """
 }
 
-process ExtractGenes {
+process ExtractSequences {
     cpus 8
     conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2"
     tag "Cutadapt on ${fastq_gz}"
