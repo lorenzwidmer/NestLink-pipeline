@@ -2,7 +2,7 @@
 
 /* Define parameters */
 params.data = "$projectDir/data/*.bam"
-params.outdir = "results"
+params.outdir = "$projectDir/results"
 
 /* Print pipeline info */
 log.info """
