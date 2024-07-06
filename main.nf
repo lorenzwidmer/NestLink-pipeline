@@ -2,6 +2,7 @@
 
 /* Define parameters */
 params.data = "$projectDir/data/*.bam"
+params.sequence = "$projectDir/data/*.fasta"
 params.outdir = "$projectDir/results"
 
 /* Print pipeline info */
