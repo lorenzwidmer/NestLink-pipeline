@@ -119,8 +119,7 @@ process ClusterFlycodes {
     path flycodes
 
     output:
-    path "flycode_centroids.fasta"
-    path "flycode_clusters"
+    tuple path("flycode_centroids.fasta"), path("flycode_clusters")
 
     script:
     """
@@ -135,14 +134,40 @@ process ClusterFlycodes {
     """
 }
 
+process GroupSequences {
+    cpus 1
+    conda "bioconda::dnaio=1.2.1"
+    tag "group_by_flycodes.py on $sequences"
+
+    input:
+    tuple path(centroids), path(clusters)
+    path sequences
+
+    output:
+    path "binned_sequences"
+
+    script:
+    """
+    mkdir binned_sequences
+    group_by_flycodes.py \
+        --centroids $centroids \
+        --clusters $clusters \
+        --sequences $sequences
+    """
+}
+
 /* Workflow */
 workflow {
     Channel
         .fromPath(params.data)
         .set { basecalled_ch }
+    Channel
+        .fromPath(params.sequence)
+        .set { sequence_ch }
     fastq_gz_ch = BamToFastq(basecalled_ch)
     filtered_ch = FilterReads(fastq_gz_ch)
-    genes_ch = ExtractGenes(filtered_ch)
-    flycodes_ch = ExtractFlycodes(genes_ch)
+    sequences_ch = ExtractSequences(filtered_ch)
+    flycodes_ch = ExtractFlycodes(sequences_ch)
     clusters_ch = ClusterFlycodes(flycodes_ch)
+    group_ch = GroupSequences(clusters_ch, sequences_ch)
 }
