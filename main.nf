@@ -3,6 +3,8 @@
 /* Define parameters */
 params.data = "$projectDir/data/*.bam"
 params.sequence = "$projectDir/data/*.fasta"
+params.medeka_in = "$projectDir/medaka_input"
+params.medeka_out = "$projectDir/medaka_output"
 params.outdir = "$projectDir/results"
 
 /* Print pipeline info */
@@ -162,13 +164,21 @@ process AlignSequences {
     conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
     tag "mini_align on $grouped_sequences"
 
+     publishDir params.medeka_in, mode: 'copy'
+
     input:
     path reference
     path grouped_sequences
 
+    output:
+    path "reference.fasta"
+    path "bam/merged.sorted.bam"
+    path "bam/merged.sorted.bam.bai"
+
     script:
     """
-    prepare_alignments.sh $reference $grouped_sequences temp $task.cpus
+    prepare_alignments.sh $reference $grouped_sequences bam $task.cpus
+    merge_alignments.py --bam_files bam
     """
 }
 
