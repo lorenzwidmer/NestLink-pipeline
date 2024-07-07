@@ -85,6 +85,7 @@ process ExtractSequences {
 
     cat fwd.fastq rev_rc.fastq > ${baseName}_cut.fastq
     gzip ${baseName}_cut.fastq
+    rm *.fastq
     """
 }
 
@@ -178,7 +179,7 @@ workflow {
         .set { basecalled_ch }
     Channel
         .fromPath(params.sequence)
-        .set { sequence_ch }
+        .set { reference_ch }
     fastq_gz_ch = BamToFastq(basecalled_ch)
     filtered_ch = FilterReads(fastq_gz_ch)
     sequences_ch = ExtractSequences(filtered_ch)
