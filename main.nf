@@ -156,6 +156,21 @@ process GroupSequences {
     """
 }
 
+process AlignSequences {
+    cpus 8
+    conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
+    tag "mini_align on $grouped_sequences"
+
+    input:
+    path reference
+    path grouped_sequences
+
+    script:
+    """
+    prepare_alignments.sh $reference $grouped_sequences temp $task.cpus
+    """
+}
+
 /* Workflow */
 workflow {
     Channel
@@ -170,4 +185,5 @@ workflow {
     flycodes_ch = ExtractFlycodes(sequences_ch)
     clusters_ch = ClusterFlycodes(flycodes_ch)
     group_ch = GroupSequences(clusters_ch, sequences_ch)
+    alignments_ch = AlignSequences(reference_ch, group_ch)
 }
