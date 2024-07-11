@@ -22,8 +22,7 @@ def merge_bam_files(output_path, max_files=256):
         temp_files.append(temp_file_path)
 
     # Merge all temporary files
-    final_merged_path = os.path.join(output_path, "merged.bam")
-    merge_files(temp_files, final_merged_path)
+    merge_files(temp_files, "merged.bam")
 
 
 def merge_files(files_list, output_file):
@@ -34,10 +33,8 @@ def merge_files(files_list, output_file):
 
 
 def sort_index_bam(bam_path):
-    merged_path = os.path.join(bam_path, 'merged.bam')
-    sorted_path = os.path.join(bam_path, 'merged.sorted.bam')
-    cmd_sort = ['samtools', 'sort', merged_path, '-o', sorted_path]
-    cmd_index = ['samtools', 'index', sorted_path]
+    cmd_sort = ["samtools", "sort", "merged.bam", "-o", "merged.sorted.bam"]
+    cmd_index = ["samtools", "index", "merged.sorted.bam"]
     subprocess.run(cmd_sort)
     subprocess.run(cmd_index)
 

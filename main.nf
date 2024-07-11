@@ -172,8 +172,8 @@ process AlignSequences {
 
     output:
     path "reference.fasta"
-    path "bam/merged.sorted.bam"
-    path "bam/merged.sorted.bam.bai"
+    path "merged.sorted.bam"
+    path "merged.sorted.bam.bai"
 
     script:
     """
