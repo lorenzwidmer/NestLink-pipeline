@@ -1,5 +1,5 @@
 # NestLink-pipeline
-NestLink-pipeline is a pipeline for processing NestLink libraries sequenced by nanopore sequencing. Reads are binned according to their flycodes (UMIs). Accurate consensus sequences are calculated using Medaka. Variants are called with the pipeline, resulting in a flycode assignment table that links protein variants to their respective set of flycodes.
+NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.nature.com/articles/s41592-019-0389-8) sequenced by nanopore sequencing. Reads are binned according to their flycodes (UMIs). Accurate consensus sequences are calculated using Medaka. Variants are called with the pipeline, resulting in a flycode assignment table that links protein variants to their respective set of flycodes.
 
 > [!WARNING]
 > NestLink-pipeline is still in development. Certain library-specific strings are still hard-coded in `main.nf` and have to be edited before running the pipeline.
