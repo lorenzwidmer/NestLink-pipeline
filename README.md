@@ -22,16 +22,13 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 Example with CUDA and Singularity installed on Ubuntu 20.04.
 ```bash
 singularity run --nv \
-    --bind /home/ubuntu/calculation/consensus:/data \
-    --pwd /data docker://ontresearch/medaka:latest medaka consensus \
-    /home/ubuntu/calculation/consensus/merged.sorted.bam \
-    /home/ubuntu/calculation/consensus/results.contigs.hdf \
-    --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0 | tee log_consensus.txt
+    --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
+    docker://ontresearch/medaka:latest medaka consensus \
+    --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
+    merged.sorted.bam results.contigs.hdf
 
 singularity run --nv \
-    --bind /home/ubuntu/calculation/consensus:/data \
-    --pwd /data docker://ontresearch/medaka:latest medaka stitch \
-    /home/ubuntu/calculation/consensus/results.contigs.hdf \
-    /home/ubuntu/calculation/consensus/reference.fasta \
-    /home/ubuntu/calculation/consensus/assembly.fasta | tee log_stitch.txt
+    --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
+    docker://ontresearch/medaka:latest medaka stitch \
+    results.contigs.hdf reference.fasta assembly.fasta
 ```
