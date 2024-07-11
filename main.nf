@@ -12,8 +12,6 @@ log.info """
     =================================
     N E S T L I N K   P I P E L I N E
     =================================
-    Data : ${params.data}
-    Output dir: ${params.outdir}
     """
     .stripIndent()
 
@@ -183,7 +181,7 @@ process AlignSequences {
 }
 
 /* Workflow */
-workflow {
+workflow prepare_data {
     Channel
         .fromPath(params.data)
         .set { basecalled_ch }
@@ -197,4 +195,13 @@ workflow {
     clusters_ch = ClusterFlycodes(flycodes_ch)
     group_ch = GroupSequences(clusters_ch, sequences_ch)
     alignments_ch = AlignSequences(reference_ch, group_ch)
+}
+
+workflow nestlink {
+    Channel
+        .fromPath(params.medeka_out)
+        .set { sequences_ch }
+    Channel
+        .fromPath(params.sequence)
+        .set { reference_ch }
 }
