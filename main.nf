@@ -185,9 +185,14 @@ process makeFlycodeTable {
     conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
     tag "flycode_assignment.py on $assembly"
 
+    publishDir params.outdir, mode: 'copy'
+
     input:
     path assembly
     path reference
+
+    output:
+    path "variants.fasta"
 
     script:
     """
