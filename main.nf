@@ -182,7 +182,7 @@ process AlignSequences {
 
 process makeFlycodeTable {
     cpus 1
-    conda "bioconda::dnaio=1.2.1"
+    conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
     tag "flycode_assignment.py on $assembly"
 
     input:
@@ -192,6 +192,7 @@ process makeFlycodeTable {
     script:
     """
     flycode_assignment.py \
+        --poi "TM287/288_FC" \
         --assembly $assembly \
         --reference $reference
     """
