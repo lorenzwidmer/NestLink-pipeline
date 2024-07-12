@@ -4,7 +4,7 @@
 params.data = "$projectDir/data/*.bam"
 params.sequence = "$projectDir/data/*.fasta"
 params.medeka_in = "$projectDir/medaka_input"
-params.medeka_out = "$projectDir/medaka_output"
+params.medeka_out = "$projectDir/medaka_output/*.fasta"
 params.outdir = "$projectDir/results"
 
 /* Print pipeline info */
@@ -180,6 +180,23 @@ process AlignSequences {
     """
 }
 
+process makeFlycodeTable {
+    cpus 1
+    conda "bioconda::dnaio=1.2.1"
+    tag "flycode_assignment.py on $assembly"
+
+    input:
+    path assembly
+    path reference
+
+    script:
+    """
+    flycode_assignment.py \
+        --assembly $assembly \
+        --reference $reference
+    """
+}
+
 /* Workflow */
 workflow prepare_data {
     Channel
@@ -204,4 +221,5 @@ workflow nestlink {
     Channel
         .fromPath(params.sequence)
         .set { reference_ch }
+    makeFlycodeTable(sequences_ch, reference_ch)
 }
