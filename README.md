@@ -7,6 +7,7 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 ## Requirements
 - Conda ([https://conda-forge.org/](https://conda-forge.org/))
 - Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html))
+- mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `projectDir/bin/`)
 - Medaka (Note: Medaka is not yet integrated and must be run separately)
 
 ## Running the pipeline
