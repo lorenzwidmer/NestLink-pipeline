@@ -92,10 +92,10 @@ def process_tm287_288_fc(assembly, reference):
             orf1_aa = str(Seq(orf1).translate())
             orf2_aa = str(Seq(orf2).translate())
             flycode = extract_flycode(orf2_aa, fc_start, fc_end)
-            if flycode != None:
-                mutations_287 = get_mutations(id, orf1_aa, tm287_ref_aa)
-                mutations_288 = get_mutations(id, orf2_aa, tm288_ref_aa)
-                mutations = f"TM287:{','.join(mutations_287)};TM288{','.join(mutations_288)}"
+            if is_valid_flycode_AA(flycode):
+                mutations_287 = get_mutations(id, tm287_ref_aa, orf1_aa,)
+                mutations_288 = get_mutations(id, tm288_ref_aa, orf2_aa)
+                mutations = f"NL|TM287={' '.join(mutations_287)};TM288={' '.join(mutations_288)}"
                 flycode_assignment[flycode].append(mutations)
             else:
                 print(id, "no flyocde")
