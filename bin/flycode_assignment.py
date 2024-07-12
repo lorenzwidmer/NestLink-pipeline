@@ -60,11 +60,14 @@ def is_valid_flycode_AA(seq):
 
 def get_mutations(id, reference, sequence):
     mutations = []
-    for position, pair in enumerate(zip([*reference], [*sequence])):
-        if pair[0] != pair[1]:
-            mutation = f'{pair[0]}{position + 1}{pair[1]}'
+
+    min_length = min(len(reference), len(sequence))
+    for position in range(min_length):
+        if reference[position] != sequence[position]:
+            mutation = f'{reference[position]}{position + 1}{sequence[position]}'
             mutations.append(mutation)
-    if reference == sequence:
+
+    if (reference[:min_length] == sequence[:min_length] and not mutations) or reference == sequence:
         mutations.append('wt')
     return mutations
 
