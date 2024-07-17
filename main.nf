@@ -2,7 +2,7 @@
 
 /* Define parameters */
 params.data = "$projectDir/data/*.bam"
-params.sequence = "$projectDir/data/*.fasta"
+params.reference = "$projectDir/data/reference.fasta"
 params.medeka_in = "$projectDir/medaka_input"
 params.medeka_out = "$projectDir/medaka_output/*.fasta"
 params.outdir = "$projectDir/results"
@@ -25,7 +25,7 @@ process BamToFastq {
     path basecalled
 
     output:
-    path "${basecalled.baseName}.fastq.gz"
+    tuple val(basecalled.baseName), path("${basecalled.baseName}.fastq.gz")
 
     script:
     """
@@ -39,17 +39,16 @@ process FilterReads {
     tag "Filtlong on ${reads}"
 
     input:
-    path reads
+    tuple val(sampleName), path(reads)
 
     output:
-    path "*_filtered.fastq.gz"
+    tuple val(sampleName), path("${sampleName}_filtered.fastq.gz")
 
     script:
-    def baseName = reads.name.tokenize('.')[0]
     """
     filtlong --min_mean_q 96.84 \
         --min_length 7500 --max_length 7900 \
-        ${reads} | gzip > ${baseName}_filtered.fastq.gz
+        ${reads} | gzip > ${sampleName}_filtered.fastq.gz
     """
 }
 
@@ -59,13 +58,12 @@ process ExtractSequences {
     tag "Cutadapt on ${fastq_gz}"
 
     input:
-    path fastq_gz
+    tuple val(sampleName), path(fastq_gz)
 
     output:
-    path "*_cut.fastq.gz"
+    tuple val(sampleName), path("${sampleName}_cut.fastq.gz")
 
     script:
-    def baseName = fastq_gz.name.tokenize('_')[0]
     """
     cutadapt -j $task.cpus \
         -g atgccatagcatttttatcc...agcctgatacagattaaatc \
@@ -83,8 +81,8 @@ process ExtractSequences {
         --reverse --complement rev.fastq \
         --out-file rev_rc.fastq
 
-    cat fwd.fastq rev_rc.fastq > ${baseName}_cut.fastq
-    gzip ${baseName}_cut.fastq
+    cat fwd.fastq rev_rc.fastq > ${sampleName}_cut.fastq
+    gzip ${sampleName}_cut.fastq
     rm *.fastq
     """
 }
@@ -95,10 +93,10 @@ process ExtractFlycodes {
     tag "Cutadapt on $fastq_gz"
 
     input:
-    path fastq_gz
+    tuple val(sampleName), path(fastq_gz)
 
     output:
-    path "flycodes.fasta"
+    tuple val(sampleName), path("${sampleName}_flycodes.fasta")
 
     script:
     """
@@ -107,7 +105,7 @@ process ExtractFlycodes {
         --error-rate 0.2 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
-        --fasta ${fastq_gz} > flycodes.fasta
+        --fasta ${fastq_gz} > ${sampleName}_flycodes.fasta
     """
 }
 
@@ -117,43 +115,44 @@ process ClusterFlycodes {
     tag "Vsearch on $flycodes"
 
     input:
-    path flycodes
+    tuple val(sampleName), path(flycodes)
 
     output:
-    tuple path("flycode_centroids.fasta"), path("flycode_clusters")
+    tuple path("${sampleName}_flycode_centroids.fasta"), path("${sampleName}_flycode_clusters")
 
     script:
     """
-    mkdir flycode_clusters
+    mkdir ${sampleName}_flycode_clusters
     vsearch -cluster_size \
         $flycodes \
         -id 0.90 \
         -sizeout \
         -clusterout_id \
-        -centroids flycode_centroids.fasta \
-        -clusters flycode_clusters/cluster.fasta
+        -centroids ${sampleName}_flycode_centroids.fasta \
+        -clusters ${sampleName}_flycode_clusters/cluster.fasta
     """
 }
 
 process GroupSequences {
     cpus 1
     conda "bioconda::dnaio=1.2.1"
-    tag "group_by_flycodes.py on $sequences"
+    tag "group_by_flycodes.py on $sequences with $centroids"
 
     input:
     tuple path(centroids), path(clusters)
-    path sequences
+    tuple val(sampleName), path(sequences)
 
     output:
-    path "binned_sequences"
+    tuple val(sampleName), path("${sampleName}_binned")
 
     script:
     """
-    mkdir binned_sequences
+    mkdir ${sampleName}_binned
     group_by_flycodes.py \
         --centroids $centroids \
         --clusters $clusters \
-        --sequences $sequences
+        --sequences $sequences \
+        --outdir ${sampleName}_binned
     """
 }
 
@@ -162,11 +161,10 @@ process AlignSequences {
     conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
     tag "mini_align on $grouped_sequences"
 
-     publishDir params.medeka_in, mode: 'copy'
+    publishDir "${params.medeka_in}/${sampleName}", mode: 'copy'
 
     input:
-    path reference
-    path grouped_sequences
+    tuple val(sampleName), path(grouped_sequences), path(reference)
 
     output:
     path "reference.fasta"
@@ -209,7 +207,7 @@ workflow prepare_data {
         .fromPath(params.data)
         .set { basecalled_ch }
     Channel
-        .fromPath(params.sequence)
+        .fromPath(params.reference)
         .set { reference_ch }
     fastq_gz_ch = BamToFastq(basecalled_ch)
     filtered_ch = FilterReads(fastq_gz_ch)
@@ -217,7 +215,9 @@ workflow prepare_data {
     flycodes_ch = ExtractFlycodes(sequences_ch)
     clusters_ch = ClusterFlycodes(flycodes_ch)
     group_ch = GroupSequences(clusters_ch, sequences_ch)
-    alignments_ch = AlignSequences(reference_ch, group_ch)
+    align_inp_ch = group_ch.combine(reference_ch)
+    /*align_inp_ch.view()*/
+    AlignSequences(align_inp_ch)
 }
 
 workflow nestlink {

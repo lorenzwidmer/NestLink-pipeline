@@ -70,11 +70,11 @@ def write_binned_reads(folder_path, binned_reads):
                 writer.write(record)
 
 
-def main(centroids, clusters, sequences):
+def main(centroids, clusters, sequences, outdir):
     cluster_ids = parse_centroids(centroids, 30)
     reads_dict = create_read_dictionary(clusters, cluster_ids)
     binned_reads = bin_reads_by_flycodes(sequences, reads_dict)
-    write_binned_reads("binned_sequences", binned_reads)
+    write_binned_reads(outdir, binned_reads)
 
 
 if __name__ == "__main__":
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--centroids", type=str)
     parser.add_argument("--clusters", type=str)
     parser.add_argument("--sequences", type=str)
+    parser.add_argument("--outdir", type=str)
 
     args = parser.parse_args()
-    main(args.centroids, args.clusters, args.sequences)
+    main(args.centroids, args.clusters, args.sequences, args.outdir)
