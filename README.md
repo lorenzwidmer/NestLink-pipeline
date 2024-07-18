@@ -31,5 +31,5 @@ singularity run --nv \
 singularity run --nv \
     --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
     docker://ontresearch/medaka:latest medaka stitch \
-    results.contigs.hdf reference.fasta assembly.fasta
+    results.contigs.hdf reference_all.fasta assembly.fasta
 ```
