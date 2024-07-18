@@ -25,15 +25,9 @@ for reads_file in $input_path/reads_fc*.fastq.gz; do
     uuid=$(uuidgen)
   
     # Generate the corresponding seed file and output bam file names
-    seed_file="$output_path/seed_fc${number}_og.fasta"
+    reference_file="$input_path/reference_fc${number}.fasta"
     output_bam="$output_path/calls_to_draft_fc${number}"
 
-    # Write seed file
-    printf ">$uuid\n$reference\n" > $seed_file
-
-    # Append to reference.fasta
-    printf ">$uuid\n$reference\n" >> reference.fasta
-
     echo "Processing reads file: $reads_file."
-    mini_align.sh -i $reads_file -r $seed_file -m -p $output_bam -t $threads
+    mini_align.sh -i $reads_file -r $reference_file -m -p $output_bam -t $threads
 done
