@@ -188,17 +188,17 @@ process makeFlycodeTable {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    path assembly
-    path reference
+    tuple path(assembly), path(reference)
 
     output:
-    path "variants.fasta"
+    path "${assembly.baseName}_fc.fasta"
 
     script:
     """
     flycode_assignment.py \
         --poi "TM287/288_FC" \
         --assembly $assembly \
+        --file_name ${assembly.baseName}_fc.fasta \
         --reference $reference
     """
 }
@@ -225,9 +225,10 @@ workflow prepare_data {
 workflow nestlink {
     Channel
         .fromPath(params.medeka_out)
-        .set { sequences_ch }
+        .set { consensus_ch }
     Channel
-        .fromPath(params.sequence)
+        .fromPath(params.reference)
         .set { reference_ch }
-    makeFlycodeTable(sequences_ch, reference_ch)
+    nestlink_inp_ch = consensus_ch.combine(reference_ch)
+    makeFlycodeTable(nestlink_inp_ch)
 }

@@ -30,4 +30,5 @@ for reads_file in $input_path/reads_fc*.fastq.gz; do
 
     echo "Processing reads file: $reads_file."
     mini_align.sh -i $reads_file -r $reference_file -m -p $output_bam -t $threads
+
 done

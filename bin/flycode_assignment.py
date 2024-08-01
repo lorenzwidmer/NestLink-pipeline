@@ -106,16 +106,18 @@ def process_tm287_288_fc(assembly, reference):
     return (flycode_assignment)
 
 
-def write_flycode_variant_fasta(variants):
+def write_flycode_variant_fasta(file_name, variants):
     variant_dict = defaultdict(list)
-    for key, value in variants.items():
-        if len(value) == 1:
-            variant_dict[value[0]].append(key)
+    for variant, flycode in variants.items():
+        if len(set(flycode)) == 1: # are all variants of a flycode identical
+            variant_dict[flycode[0]].append(variant)
+        else:
+            print(f"flycode {variant}: variants {' '.join(flycode)}")
 
-    with open("variants.fasta", "w") as file:
-        for key, value in variant_dict.items():
-            file.write(f">{key}\n")
-            file.write(f"{''.join(value)}\n")
+    with open(file_name, "w") as file:
+        for variant, flycode in variant_dict.items():
+            file.write(f">{variant}\n")
+            file.write(f"{''.join(flycode)}\n")
 
 
 def process_protein_of_interest(case_name, assembly, reference):
@@ -128,16 +130,17 @@ def process_protein_of_interest(case_name, assembly, reference):
             return process_tm287_288_fc(assembly, reference)
 
 
-def main(poi, assembly, reference):
+def main(poi, assembly, file_name, reference):
     flycode_assignment = process_protein_of_interest(poi, assembly, reference)
-    write_flycode_variant_fasta(flycode_assignment)
+    write_flycode_variant_fasta(file_name, flycode_assignment)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--poi", type=str)
     parser.add_argument("--assembly", type=str)
+    parser.add_argument("--file_name", type=str)
     parser.add_argument("--reference", type=str)
 
     args = parser.parse_args()
-    main(args.poi, args.assembly, args.reference)
+    main(args.poi, args.assembly, args.file_name, args.reference)
