@@ -140,7 +140,7 @@ process GroupSequences {
 
     input:
     tuple path(centroids), path(clusters)
-    tuple val(sampleName), path(sequences)
+    tuple val(sampleName), path(sequences), path(reference)
 
     output:
     tuple val(sampleName), path("${sampleName}_binned")
@@ -152,6 +152,7 @@ process GroupSequences {
         --centroids $centroids \
         --clusters $clusters \
         --sequences $sequences \
+        --reference $reference \
         --outdir ${sampleName}_binned
     """
 }
@@ -174,6 +175,7 @@ process AlignSequences {
     script:
     """
     prepare_alignments.sh $reference $grouped_sequences bam $task.cpus
+    cp $grouped_sequences/reference.fasta reference_all.fasta
     merge_alignments.py --bam_files bam
     """
 }
@@ -214,10 +216,10 @@ workflow prepare_data {
     sequences_ch = ExtractSequences(filtered_ch)
     flycodes_ch = ExtractFlycodes(sequences_ch)
     clusters_ch = ClusterFlycodes(flycodes_ch)
+    sequences_ch = sequences_ch.combine(reference_ch)
     group_ch = GroupSequences(clusters_ch, sequences_ch)
-    align_inp_ch = group_ch.combine(reference_ch)
-    /*align_inp_ch.view()*/
-    AlignSequences(align_inp_ch)
+    group_ch = group_ch.combine(reference_ch)
+    AlignSequences(group_ch)
 }
 
 workflow nestlink {
