@@ -223,9 +223,10 @@ workflow prepare_data {
 workflow nestlink {
     Channel
         .fromPath(params.medeka_out)
-        .set { sequences_ch }
+        .set { consensus_ch }
     Channel
-        .fromPath(params.sequence)
+        .fromPath(params.reference)
         .set { reference_ch }
-    makeFlycodeTable(sequences_ch, reference_ch)
+    nestlink_inp_ch = consensus_ch.combine(reference_ch)
+    makeFlycodeTable(nestlink_inp_ch)
 }
