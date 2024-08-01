@@ -167,7 +167,7 @@ process AlignSequences {
     tuple val(sampleName), path(grouped_sequences), path(reference)
 
     output:
-    path "reference.fasta"
+    path "reference_all.fasta"
     path "merged.sorted.bam"
     path "merged.sorted.bam.bai"
 
@@ -186,17 +186,17 @@ process makeFlycodeTable {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    path assembly
-    path reference
+    tuple path(assembly), path(reference)
 
     output:
-    path "variants.fasta"
+    path "${assembly.baseName}_fc.fasta"
 
     script:
     """
     flycode_assignment.py \
         --poi "TM287/288_FC" \
         --assembly $assembly \
+        --file_name ${assembly.baseName}_fc.fasta \
         --reference $reference
     """
 }

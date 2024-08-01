@@ -32,8 +32,8 @@ for reads_file in $input_path/reads_fc*.fastq.gz; do
     printf ">$uuid\n$reference\n" > $seed_file
 
     # Append to reference.fasta
-    printf ">$uuid\n$reference\n" >> reference.fasta
+    printf ">$uuid\n$reference\n" >> reference_all.fasta
 
-    echo "Processing reads file: $reads_file."
+    echo "Processing reads file: $reads_file as $uuid."
     mini_align.sh -i $reads_file -r $seed_file -m -p $output_bam -t $threads
 done
