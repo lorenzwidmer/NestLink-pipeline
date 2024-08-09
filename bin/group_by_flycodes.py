@@ -2,6 +2,7 @@
 import argparse
 import os
 import re
+import uuid
 import dnaio
 from collections import Counter
 from collections import defaultdict
@@ -55,11 +56,8 @@ def read_clusters(folder_path, cluster_ids):
 
         # Open the respective cluster file.
         with dnaio.open(file_path) as reader:
-            flycodes_dict = {}  # dictionary which maps reads to their corresponding cluster_id
             flycodes_list = []  # all flycodes of the cluster
-
-            # Temporary dictionary to map read IDs to their cluster_id for the current cluster file.
-            reads_temp = {}
+            reads_temp = {}  # Temporary dictionary to map read IDs to their cluster_id for the current cluster file.
 
             for record in reader:
                 readid, _ = record.name.split(';')
@@ -67,9 +65,6 @@ def read_clusters(folder_path, cluster_ids):
                 flycode = record.sequence
                 # Collect all flycodes in the current cluster to count occurrences later.
                 flycodes_list.append(flycode)
-                # Store the first read ID associated with each unique flycode.
-                if flycode not in flycodes_dict:
-                    flycodes_dict[flycode] = readid
 
             # Count occurrences of each flycode in the cluster.
             flycodes_counter = Counter(flycodes_list)
@@ -77,14 +72,11 @@ def read_clusters(folder_path, cluster_ids):
             most_common_flycode, count = flycodes_counter.most_common(1)[0]
             # Check if the most common flycode is valid and occurs at least 10 times.
             if is_valid_flycode(most_common_flycode) and count >= 10:
-                # get the readid of the first seen flycode of the most common flycodes
-                reference_flycode = flycodes_dict[most_common_flycode]
-                # remove it from the temporary flycode dictionary
-                del reads_temp[reference_flycode]
+                cluster_uuid = str(uuid.uuid4())
                 # Update the reads dictionary with read IDs from the current cluster.
                 reads = reads | reads_temp
                 # Record the reference and most sequence of the most common flycode for the current cluster.
-                references[cluster_id] = (reference_flycode, most_common_flycode)
+                references[cluster_id] = (cluster_uuid, most_common_flycode)
     return references, reads
 
 
