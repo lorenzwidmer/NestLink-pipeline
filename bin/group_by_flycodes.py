@@ -4,6 +4,7 @@ import os
 import re
 import uuid
 import dnaio
+import pandas as pd
 from collections import Counter
 from collections import defaultdict
 
@@ -61,8 +62,8 @@ def read_clusters(folder_path, cluster_ids):
 
             for record in reader:
                 readid, _ = record.name.split(';')
-                reads_temp[readid] = cluster_id
                 flycode = record.sequence
+                reads_temp[readid] = (flycode, cluster_id)
                 # Collect all flycodes in the current cluster to count occurrences later.
                 flycodes_list.append(flycode)
 
@@ -89,7 +90,7 @@ def bin_reads_by_flycodes(reads_path, reads_dict):
         for record in reader:
             readid = record.name.split('	')[0]
             if readid in reads_dict:
-                cluster_id = reads_dict[readid]
+                _, cluster_id = reads_dict[readid]
                 reads_binned[cluster_id].append(record)
     return reads_binned
 
@@ -143,12 +144,25 @@ def write_reference_files(folder_path, reference, references):
             writer.write(record)
 
 
+def write_csv(references_dict, reads_dict):
+    df_clusters = pd.DataFrame.from_dict(references_dict, orient='index', columns=['cluster_uuid', 'most_common_flycode'])
+    df_clusters.reset_index(inplace=True)
+    df_clusters.rename(columns={'index': 'cluster_id'}, inplace=True)
+    df_clusters.to_csv('clusters.csv', index=False)
+
+    df_reads = pd.DataFrame.from_dict(reads_dict, orient='index', columns=['flycode', 'cluster_id'])
+    df_reads.reset_index(inplace=True)
+    df_reads.rename(columns={'index': 'read_id'}, inplace=True)
+    df_reads.to_csv('reads.csv', index=False)
+
+
 def main(centroids, clusters, sequences, reference, outdir):
     cluster_ids = parse_centroids_file(centroids, 10)
     references_dict, reads_dict = read_clusters(clusters, cluster_ids)
     binned_reads = bin_reads_by_flycodes(sequences, reads_dict)
     write_binned_reads(outdir, binned_reads)
     write_reference_files(outdir, reference, references_dict)
+    write_csv(references_dict, reads_dict)
 
 
 if __name__ == "__main__":

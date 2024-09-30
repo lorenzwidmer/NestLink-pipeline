@@ -135,7 +135,7 @@ process ClusterFlycodes {
 
 process GroupSequences {
     cpus 1
-    conda "bioconda::dnaio=1.2.1"
+    conda "bioconda::dnaio=1.2.1 conda-forge::pandas=2.2.2"
     tag "group_by_flycodes.py on $sequences with $centroids"
 
     input:
