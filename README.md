@@ -24,12 +24,12 @@ Example with CUDA and Singularity installed on Ubuntu 20.04.
 ```bash
 singularity run --nv \
     --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
-    docker://ontresearch/medaka:latest medaka consensus \
+    docker://ontresearch/medaka:latest medaka inference \
     --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
     merged.sorted.bam results.contigs.hdf
 
 singularity run --nv \
     --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
-    docker://ontresearch/medaka:latest medaka stitch \
+    docker://ontresearch/medaka:latest medaka sequence \
     results.contigs.hdf reference_all.fasta assembly.fasta
 ```
