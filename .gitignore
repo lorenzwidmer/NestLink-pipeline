@@ -8,3 +8,4 @@ work
 .nextflow.log*
 *.html
 mini_align.sh
+etc
