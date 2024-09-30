@@ -33,3 +33,17 @@ singularity run --nv \
     docker://ontresearch/medaka:latest medaka sequence \
     results.contigs.hdf reference_all.fasta assembly.fasta
 ```
+
+## Running the pipeline on the s3it cluster
+### Installing nextflow, dorado and medaka
+```bash
+# Requesting an interactive session
+srun --pty -n 1 -c 1 --time=01:00:00 --mem=4G bash -l
+# Installing nextflow
+module load mamba
+mamba create -n nextflow bioconda::nextflow
+# Building the singluarity containers of dorado and medaka
+module load singularityce
+singularity build --sandbox /data/$USER/dorado docker://ontresearch/dorado:latest
+singularity build --sandbox /data/$USER/medaka docker://ontresearch/medaka:latest
+```
