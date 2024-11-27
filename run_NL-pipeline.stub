@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+nextflow run main.nf \
+    -profile local \
+    -entry main \
+    -stub-run \
+    -with-report \
+    -with-dag
