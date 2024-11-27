@@ -198,7 +198,7 @@ process ALIGN_SEQUENCES {
     path(reference)
 
     output:
-    tuple path("reference_all.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
+    tuple val(sample_id), path("reference_all.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
 
     script:
     """
@@ -215,15 +215,14 @@ process ALIGN_SEQUENCES {
 
 process MEDAKA_CONSENSUS {
     container 'ontresearch/medaka:latest'
-
     cpus 8
     memory '16 GB'
     time '60m'
     clusterOptions '--gpus=V100:1s'
+    tag "${sample_id}"
 
     input:
-    path(bam)
-    path(reference)
+    tuple val(sample_id), path(reference_all), path(bam), path(bai)
 
     output:
     path("assembly.fasta"), emit: consensus
@@ -285,7 +284,7 @@ workflow prepareData {
     ALIGN_SEQUENCES(GROUP_SEQUENCES.out.binned_reads, reference_ch)
 
     emit:
-    ALIGN_SEQUENCES.out.alignment
+    alignment = ALIGN_SEQUENCES.out.alignment
 }
 
 workflow {
@@ -300,4 +299,6 @@ workflow {
     reference_ch = Channel.fromPath(params.reference)
 
     prepareData(basecalled_ch, reference_ch)
+
+    MEDAKA_CONSENSUS(prepareData.out.alignment)
 }
