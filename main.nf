@@ -16,7 +16,7 @@ process BAM_TO_FASTQ {
 
     script:
     """
-    samtools fastq --threads $task.cpus $basecalled | gzip > ${basecalled.baseName}.fastq.gz
+    samtools fastq --threads $task.cpus ${basecalled} | gzip > ${basecalled.baseName}.fastq.gz
     """
 
     stub:
