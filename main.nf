@@ -291,6 +291,7 @@ workflow {
     log.info """
     ┌───────────────────────────────────┐
     │ N E S T L I N K   P I P E L I N E │
+    │ by Fabian Ackle                   │  
     └───────────────────────────────────┘
     """
     .stripIndent()
