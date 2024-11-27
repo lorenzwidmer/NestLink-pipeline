@@ -218,7 +218,7 @@ process MEDAKA_CONSENSUS {
     cpus 8
     memory '16 GB'
     time '60m'
-    clusterOptions '--gpus=V100:1s'
+    clusterOptions '--gpus=V100:1'
     tag "${sample_id}"
 
     input:
