@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 /* Processes */
-process BamToFastq {
+process BAM_TO_FASTQ {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -25,7 +25,7 @@ process BamToFastq {
     """
 }
 
-process FilterReads {
+process FILTER_READS {
     cpus 1
     memory '4 GB'
     time '60m'
@@ -36,7 +36,7 @@ process FilterReads {
     tuple val(sample_id), path(reads)
 
     output:
-    tuple val(sample_id), path("${sample_id}_filtered.fastq.gz"), emit: filtered
+    tuple val(sample_id), path("${sample_id}_filtered.fastq.gz"), emit: reads
 
     script:
     """
@@ -51,7 +51,7 @@ process FilterReads {
     """
 }
 
-process ExtractSequences {
+process EXTRACT_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -62,7 +62,7 @@ process ExtractSequences {
     tuple val(sample_id), path(fastq_gz)
 
     output:
-    tuple val(sample_id), path("${sample_id}_cut.fastq.gz"), emit: cut
+    tuple val(sample_id), path("${sample_id}_cut.fastq.gz"), emit: sequences
 
     script:
     """
@@ -91,7 +91,7 @@ process ExtractSequences {
     """
 }
 
-process ExtractFlycodes {
+process EXTRACT_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -120,7 +120,7 @@ process ExtractFlycodes {
     """
 }
 
-process ClusterFlycodes {
+process CLUSTER_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -152,7 +152,7 @@ process ClusterFlycodes {
     """
 }
 
-process GroupSequences {
+process GROUP_SEQUENCES {
     cpus 1
     memory '4 GB'
     time '60m'
@@ -184,7 +184,7 @@ process GroupSequences {
     """
 }
 
-process AlignSequences {
+process ALIGN_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -213,7 +213,7 @@ process AlignSequences {
     """
 }
 
-process medakaConsensus {
+process MEDAKA_CONSENSUS {
     container 'ontresearch/medaka:latest'
 
     cpus 8
@@ -226,7 +226,7 @@ process medakaConsensus {
     path(reference)
 
     output:
-    path("assembly.fasta")
+    path("assembly.fasta"), emit: consensus
 
     script:
     """
@@ -244,7 +244,7 @@ process medakaConsensus {
     """
 }
 
-process makeFlycodeTable {
+process FLYCODE_TABLE {
     cpus 1
     memory '16 GB'
     time '60m'
@@ -257,7 +257,7 @@ process makeFlycodeTable {
     tuple path(assembly), path(reference)
 
     output:
-    path "${assembly.baseName}_fc.fasta"
+    path "${assembly.baseName}_fc.fasta", emit: flycode_db
 
     script:
     """
@@ -270,33 +270,22 @@ process makeFlycodeTable {
 }
 
 /* Workflows */
-workflow prepare_data {
+workflow prepareData {
     take:
     basecalled_ch
     reference_ch
 
     main:
-    BamToFastq(basecalled_ch)
-    FilterReads(BamToFastq.out.fastq_gz)
-    ExtractSequences(FilterReads.out.filtered)
-    ExtractFlycodes(ExtractSequences.out.cut)
-    ClusterFlycodes(ExtractFlycodes.out.flycodes)
-    GroupSequences(ClusterFlycodes.out.clusters, ExtractSequences.out.cut, reference_ch)
-    AlignSequences(GroupSequences.out.binned_reads, reference_ch)
+    BAM_TO_FASTQ(basecalled_ch)
+    FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
+    EXTRACT_SEQUENCES(FILTER_READS.out.reads)
+    EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
+    CLUSTER_FLYCODES(EXTRACT_FLYCODES.out.flycodes)
+    GROUP_SEQUENCES(CLUSTER_FLYCODES.out.clusters, EXTRACT_SEQUENCES.out.sequences, reference_ch)
+    ALIGN_SEQUENCES(GROUP_SEQUENCES.out.binned_reads, reference_ch)
 
     emit:
-    AlignSequences.out.alignment
-}
-
-workflow nestlink {
-    Channel
-        .fromPath(params.medeka_out)
-        .set { consensus_ch }
-    Channel
-        .fromPath(params.reference)
-        .set { reference_ch }
-    nestlink_inp_ch = consensus_ch.combine(reference_ch)
-    makeFlycodeTable(nestlink_inp_ch)
+    ALIGN_SEQUENCES.out.alignment
 }
 
 workflow {
@@ -310,5 +299,5 @@ workflow {
     basecalled_ch = Channel.fromPath(params.data)
     reference_ch = Channel.fromPath(params.reference)
 
-    prepare_data(basecalled_ch, reference_ch)
+    prepareData(basecalled_ch, reference_ch)
 }
