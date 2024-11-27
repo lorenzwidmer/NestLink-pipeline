@@ -180,6 +180,37 @@ process AlignSequences {
     """
 }
 
+process medakaConsensus {
+    container 'ontresearch/medaka:latest'
+
+    cpus 8
+    memory '16 GB'
+    time '60m'
+    clusterOptions '--gpus=V100:1s'
+
+    input:
+    path(bam)
+    path(reference)
+
+    output:
+    path("assembly.fasta")
+
+    script:
+    """
+    medaka inference \
+    --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
+    merged.sorted.bam results.contigs.hdf
+
+    medaka sequence \
+    results.contigs.hdf reference_all.fasta assembly.fasta
+    """
+
+    stub:
+    """
+    touch assembly.fasta
+    """
+}
+
 process makeFlycodeTable {
     cpus 1
     conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
