@@ -12,7 +12,7 @@ conda activate nextflow
 
 nextflow run main.nf \
     -profile cluster \
-    -entry prepare_data \
+    -params-file params.json \
     -resume \
     -with-report \
     -with-timeline \

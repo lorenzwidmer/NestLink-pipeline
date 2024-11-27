@@ -1,0 +1,5 @@
+{
+    "data": "data/*.bam",
+    "reference": "data/reference.fasta",
+    "outdir": "results"
+}

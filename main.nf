@@ -1,67 +1,68 @@
 #!/usr/bin/env nextflow
 
-/* Define parameters */
-params.data = "$projectDir/data/*.bam"
-params.reference = "$projectDir/data/reference.fasta"
-params.medeka_in = "$projectDir/medaka_input"
-params.medeka_out = "$projectDir/medaka_output/*.fasta"
-params.outdir = "$projectDir/results"
-
-/* Print pipeline info */
-log.info """
-    =================================
-    N E S T L I N K   P I P E L I N E
-    =================================
-    """
-    .stripIndent()
-
 /* Processes */
 process BamToFastq {
     cpus 8
+    memory '4 GB'
+    time '60m'
     conda "bioconda::samtools=1.20"
-    tag "Samtools fastq on ${basecalled}"
+    tag "${basecalled.baseName}"
 
     input:
-    path basecalled
+    path(basecalled)
 
     output:
-    tuple val(basecalled.baseName), path("${basecalled.baseName}.fastq.gz")
+    tuple val(basecalled.baseName), path("${basecalled.baseName}.fastq.gz"), emit: fastq_gz
 
     script:
     """
-    samtools fastq --threads $task.cpus $basecalled | gzip > "${basecalled.baseName}.fastq.gz"
+    samtools fastq --threads $task.cpus $basecalled | gzip > ${basecalled.baseName}.fastq.gz
+    """
+
+    stub:
+    """
+    touch ${basecalled.baseName}.fastq.gz
     """
 }
 
 process FilterReads {
     cpus 1
+    memory '4 GB'
+    time '60m'
     conda "bioconda::filtlong=0.2.1"
-    tag "Filtlong on ${reads}"
+    tag "${sample_id}"
 
     input:
-    tuple val(sampleName), path(reads)
+    tuple val(sample_id), path(reads)
 
     output:
-    tuple val(sampleName), path("${sampleName}_filtered.fastq.gz")
+    tuple val(sample_id), path("${sample_id}_filtered.fastq.gz"), emit: filtered
 
     script:
     """
     filtlong --min_mean_q 96.84 \
         --min_length 7500 --max_length 7900 \
-        ${reads} | gzip > ${sampleName}_filtered.fastq.gz
+        ${reads} | gzip > ${sample_id}_filtered.fastq.gz
+    """
+
+    stub:
+    """
+    touch ${sample_id}_filtered.fastq.gz
     """
 }
 
 process ExtractSequences {
     cpus 8
+    memory '4 GB'
+    time '60m'
     conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2"
-    tag "Cutadapt on ${fastq_gz}"
+    tag "${sample_id}"
 
     input:
-    tuple val(sampleName), path(fastq_gz)
+    tuple val(sample_id), path(fastq_gz)
 
     output:
-    tuple val(sampleName), path("${sampleName}_cut.fastq.gz")
+    tuple val(sample_id), path("${sample_id}_cut.fastq.gz"), emit: cut
 
     script:
     """
@@ -81,22 +82,27 @@ process ExtractSequences {
         --reverse --complement rev.fastq \
         --out-file rev_rc.fastq
 
-    cat fwd.fastq rev_rc.fastq > ${sampleName}_cut.fastq
-    gzip ${sampleName}_cut.fastq
-    rm *.fastq
+    cat fwd.fastq rev_rc.fastq | gzip > ${sample_id}_cut.fastq.gz
+    """
+
+    stub:
+    """
+    touch ${sample_id}_cut.fastq.gz
     """
 }
 
 process ExtractFlycodes {
     cpus 8
+    memory '4 GB'
+    time '60m'
     conda "bioconda::cutadapt=4.9"
-    tag "Cutadapt on $fastq_gz"
+    tag "${sample_id}"
 
     input:
-    tuple val(sampleName), path(fastq_gz)
+    tuple val(sample_id), path(fastq_gz)
 
     output:
-    tuple val(sampleName), path("${sampleName}_flycodes.fasta")
+    tuple val(sample_id), path("${sample_id}_flycodes.fasta"), emit: flycodes
 
     script:
     """
@@ -105,78 +111,105 @@ process ExtractFlycodes {
         --error-rate 0.2 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
-        --fasta ${fastq_gz} > ${sampleName}_flycodes.fasta
+        --fasta ${fastq_gz} > ${sample_id}_flycodes.fasta
+    """
+
+    stub:
+    """
+    touch ${sample_id}_flycodes.fasta
     """
 }
 
 process ClusterFlycodes {
     cpus 8
+    memory '4 GB'
+    time '60m'
     conda "bioconda::vsearch=2.28"
-    tag "Vsearch on $flycodes"
+    tag "${sample_id}"
 
     input:
-    tuple val(sampleName), path(flycodes)
+    tuple val(sample_id), path(flycodes)
 
     output:
-    tuple path("${sampleName}_flycode_centroids.fasta"), path("${sampleName}_flycode_clusters")
+    tuple val(sample_id), path("${sample_id}_flycode_centroids.fasta"), path("${sample_id}_flycode_clusters"), emit: clusters
 
     script:
     """
-    mkdir ${sampleName}_flycode_clusters
+    mkdir ${sample_id}_flycode_clusters
     vsearch -cluster_size \
         $flycodes \
         -id 0.90 \
         -sizeout \
         -clusterout_id \
-        -centroids ${sampleName}_flycode_centroids.fasta \
-        -clusters ${sampleName}_flycode_clusters/cluster.fasta
+        -centroids ${sample_id}_flycode_centroids.fasta \
+        -clusters ${sample_id}_flycode_clusters/cluster.fasta
+    """
+
+    stub:
+    """
+    mkdir ${sample_id}_flycode_clusters
+    touch ${sample_id}_flycode_centroids.fasta
     """
 }
 
 process GroupSequences {
     cpus 1
+    memory '4 GB'
+    time '60m'
     conda "bioconda::dnaio=1.2.1 conda-forge::pandas=2.2.2"
-    tag "group_by_flycodes.py on $sequences with $centroids"
+    tag "${sample_id}"
 
     input:
-    tuple path(centroids), path(clusters)
-    tuple val(sampleName), path(sequences), path(reference)
+    tuple val(sample_id), path(centroids), path(clusters)
+    tuple val(sample_id2), path(sequences)
+    path(reference)
 
     output:
-    tuple val(sampleName), path("${sampleName}_binned")
+    tuple val(sample_id), path("${sample_id}_binned"), emit: binned_reads
 
     script:
     """
-    mkdir ${sampleName}_binned
+    mkdir ${sample_id}_binned
     group_by_flycodes.py \
         --centroids $centroids \
         --clusters $clusters \
         --sequences $sequences \
         --reference $reference \
-        --outdir ${sampleName}_binned
+        --outdir ${sample_id}_binned
+    """
+
+    stub:
+    """
+    mkdir ${sample_id}_binned
     """
 }
 
 process AlignSequences {
     cpus 8
+    memory '4 GB'
+    time '60m'
     conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
-    tag "mini_align on $grouped_sequences"
+    tag "${sample_id}"
 
-    publishDir "${params.medeka_in}/${sampleName}", mode: 'copy'
+    publishDir "${params.outdir}", mode: 'copy'
 
     input:
-    tuple val(sampleName), path(grouped_sequences), path(reference)
+    tuple val(sample_id), path(grouped_sequences)
+    path(reference)
 
     output:
-    path "reference_all.fasta"
-    path "merged.sorted.bam"
-    path "merged.sorted.bam.bai"
+    tuple path("reference_all.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
 
     script:
     """
     prepare_alignments.sh $reference $grouped_sequences bam $task.cpus
     cp $grouped_sequences/reference.fasta reference_all.fasta
     merge_alignments.py --bam_files bam
+    """
+
+    stub:
+    """
+    touch reference_all.fasta merged.sorted.bam merged.sorted.bam.bai
     """
 }
 
@@ -213,6 +246,8 @@ process medakaConsensus {
 
 process makeFlycodeTable {
     cpus 1
+    memory '16 GB'
+    time '60m'
     conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
     tag "flycode_assignment.py on $assembly"
 
@@ -234,23 +269,23 @@ process makeFlycodeTable {
     """
 }
 
-/* Workflow */
+/* Workflows */
 workflow prepare_data {
-    Channel
-        .fromPath(params.data)
-        .set { basecalled_ch }
-    Channel
-        .fromPath(params.reference)
-        .set { reference_ch }
-    fastq_gz_ch = BamToFastq(basecalled_ch)
-    filtered_ch = FilterReads(fastq_gz_ch)
-    sequences_ch = ExtractSequences(filtered_ch)
-    flycodes_ch = ExtractFlycodes(sequences_ch)
-    clusters_ch = ClusterFlycodes(flycodes_ch)
-    sequences_ch = sequences_ch.combine(reference_ch)
-    group_ch = GroupSequences(clusters_ch, sequences_ch)
-    group_ch = group_ch.combine(reference_ch)
-    AlignSequences(group_ch)
+    take:
+    basecalled_ch
+    reference_ch
+
+    main:
+    BamToFastq(basecalled_ch)
+    FilterReads(BamToFastq.out.fastq_gz)
+    ExtractSequences(FilterReads.out.filtered)
+    ExtractFlycodes(ExtractSequences.out.cut)
+    ClusterFlycodes(ExtractFlycodes.out.flycodes)
+    GroupSequences(ClusterFlycodes.out.clusters, ExtractSequences.out.cut, reference_ch)
+    AlignSequences(GroupSequences.out.binned_reads, reference_ch)
+
+    emit:
+    AlignSequences.out.alignment
 }
 
 workflow nestlink {
@@ -262,4 +297,18 @@ workflow nestlink {
         .set { reference_ch }
     nestlink_inp_ch = consensus_ch.combine(reference_ch)
     makeFlycodeTable(nestlink_inp_ch)
+}
+
+workflow {
+    log.info """
+    ┌───────────────────────────────────┐
+    │ N E S T L I N K   P I P E L I N E │
+    └───────────────────────────────────┘
+    """
+    .stripIndent()
+
+    basecalled_ch = Channel.fromPath(params.data)
+    reference_ch = Channel.fromPath(params.reference)
+
+    prepare_data(basecalled_ch, reference_ch)
 }
