@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+nextflow run main.nf \
+    -profile standard \
+    -params-file params.json \
+    -stub-run \
+    -with-report \
+    -with-dag
