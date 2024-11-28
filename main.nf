@@ -233,10 +233,12 @@ process MEDAKA_CONSENSUS {
     """
     medaka inference \
     --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
-    merged.sorted.bam results.contigs.hdf
+    merged.sorted.bam results.contigs.hdf \
+    > medaka_interference.log
 
     medaka sequence \
-    results.contigs.hdf reference_all.fasta assembly.fasta
+    results.contigs.hdf reference_all.fasta assembly.fasta \
+    > medaka_sequence.log
 
     nvidia-smi > nvidia-smi.txt
     """
