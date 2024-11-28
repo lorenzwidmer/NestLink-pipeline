@@ -5,45 +5,23 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 > NestLink-pipeline is still in development. Certain library-specific strings are still hard-coded in `main.nf` and have to be edited before running the pipeline.
 
 ## Requirements
-- Conda ([https://conda-forge.org/](https://conda-forge.org/))
+### Local and cluster execution
+- Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
 - Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html))
 - mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `projectDir/bin/`)
-- Medaka (Note: Medaka is not yet integrated and must be run separately)
-
-## Running the pipeline
-1. Clone the repository.
-2. Place the basecalled sequencing data and the reference sequence into `projectDir/data/`.
-3. Run the first workflow "prepare_data" of the pipeline:
-`nextflow run main.nf -entry prepare_data`
-4. Generate the consenus sequences using medaka with the data from `projectDir/medaka_input/`, and place the Medaka output `assembly.fasta` into the folder `projectDir/medaka_input/`.
-5. Run the second workflow "nestlink" of the pipeline:
-`nextflow run main.nf -entry nestlink`
-
-## Generating consensus sequences using Medaka
-Example with CUDA and Singularity installed on Ubuntu 20.04.
-```bash
-singularity run --nv \
-    --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
-    docker://ontresearch/medaka:latest medaka inference \
-    --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
-    merged.sorted.bam results.contigs.hdf
-
-singularity run --nv \
-    --bind /home/ubuntu/calculation/consensus:/data --pwd /data \
-    docker://ontresearch/medaka:latest medaka sequence \
-    results.contigs.hdf reference_all.fasta assembly.fasta
-```
+### Cluster execution only
+- Slurm workflow manager
+- Singularity
 
 ## Running the pipeline on the s3it cluster
-### Installing nextflow, dorado and medaka
-```bash
-# Requesting an interactive session
-srun --pty -n 1 -c 1 --time=01:00:00 --mem=4G bash -l
-# Installing nextflow
-module load mamba
-mamba create -n nextflow bioconda::nextflow
-# Building the singluarity containers of dorado and medaka
-module load singularityce
-singularity build --sandbox /data/$USER/dorado docker://ontresearch/dorado:latest
-singularity build --sandbox /data/$USER/medaka docker://ontresearch/medaka:latest
-```
+1. Clone the repository.
+2. Edit the params.json file, specify the nanopore reads (bam) and reference sequence.
+3. Run the pipeline:
+`sbatch run_NL-pipeline.slurm`
+
+## Running the pipeline locally
+> [!NOTE]
+> Consensus sequence generation with medaka has to be run manually.
+1. Prepare the pipeline as described above.
+2. Run the pipeline:
+`bash run_NL-pipeline.sh`
