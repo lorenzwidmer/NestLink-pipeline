@@ -193,7 +193,7 @@ process ALIGN_SEQUENCES {
     conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
     tag "${sample_id}"
 
-    publishDir "${params.outdir}", mode: 'copy'
+    publishDir "${params.outdir}", mode: 'copy', enabled: workflow.profile == 'standard'
 
     input:
     tuple val(sample_id), path(grouped_sequences)
