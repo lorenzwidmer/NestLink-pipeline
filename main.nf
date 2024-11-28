@@ -220,14 +220,14 @@ process MEDAKA_CONSENSUS {
     cpus 8
     memory '16 GB'
     time '60m'
-    clusterOptions '--gpus=V100:1'
+    clusterOptions '--gpus=1'
     tag "${sample_id}"
 
     input:
     tuple val(sample_id), path(reference_all), path(bam), path(bai)
 
     output:
-    path("assembly.fasta"), emit: consensus
+    tuple val(sample_id), path("assembly.fasta"), emit: consensus
 
     script:
     """
@@ -237,6 +237,8 @@ process MEDAKA_CONSENSUS {
 
     medaka sequence \
     results.contigs.hdf reference_all.fasta assembly.fasta
+
+    nvidia-smi > nvidia-smi.txt
     """
 
     stub:
