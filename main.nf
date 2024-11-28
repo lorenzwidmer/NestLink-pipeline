@@ -223,11 +223,13 @@ process MEDAKA_CONSENSUS {
     clusterOptions '--gpus=1'
     tag "${sample_id}"
 
+    publishDir params.outdir, mode: 'copy'
+
     input:
     tuple val(sample_id), path(reference_all), path(bam), path(bai)
 
     output:
-    tuple val(sample_id), path("assembly.fasta"), emit: consensus
+    tuple val(sample_id), path("${sample_id}_assembly.fasta"), emit: consensus
 
     script:
     """
@@ -237,7 +239,7 @@ process MEDAKA_CONSENSUS {
     2> medaka_interference.log
 
     medaka sequence \
-    results.contigs.hdf reference_all.fasta assembly.fasta \
+    results.contigs.hdf reference_all.fasta ${sample_id}_assembly.fasta \
     2> medaka_sequence.log
 
     nvidia-smi > nvidia-smi.txt
@@ -245,7 +247,7 @@ process MEDAKA_CONSENSUS {
 
     stub:
     """
-    touch assembly.fasta
+    touch ${sample_id}_assembly.fasta
     """
 }
 
