@@ -252,23 +252,28 @@ process FLYCODE_TABLE {
     memory '16 GB'
     time '60m'
     conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
-    tag "flycode_assignment.py on $assembly"
+    tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy'
 
     input:
-    tuple path(assembly), path(reference)
+    tuple val(sample_id), path(assembly)
+    path(reference)
 
     output:
-    path "${assembly.baseName}_fc.fasta", emit: flycode_db
+    path "${sample_id}_fc.fasta", emit: flycode_db
 
     script:
     """
     flycode_assignment.py \
         --poi "TM287/288_FC" \
-        --assembly $assembly \
-        --file_name ${assembly.baseName}_fc.fasta \
-        --reference $reference
+        --assembly ${assembly} \
+        --file_name ${sample_id}_fc.fasta \
+        --reference ${reference}
+    """
+    stub:
+    """
+    touch ${sample_id}_fc.fasta
     """
 }
 
