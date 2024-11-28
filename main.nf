@@ -310,5 +310,8 @@ workflow {
 
     prepareData(basecalled_ch, reference_ch)
 
-    MEDAKA_CONSENSUS(prepareData.out.alignment)
+    if (workflow.profile == 'cluster') {
+        MEDAKA_CONSENSUS(prepareData.out.alignment)
+        FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
+    }
 }
