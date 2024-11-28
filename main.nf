@@ -40,9 +40,11 @@ process FILTER_READS {
 
     script:
     """
-    filtlong --min_mean_q 96.84 \
+    filtlong \
+        --min_mean_q 96.84 \
         --min_length 7500 --max_length 7900 \
-        ${reads} | gzip > ${sample_id}_filtered.fastq.gz
+        ${reads} \
+        | gzip > ${sample_id}_filtered.fastq.gz
     """
 
     stub:
