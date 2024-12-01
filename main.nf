@@ -5,7 +5,7 @@ process BAM_TO_FASTQ {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::samtools=1.20"
+    conda "bioconda::samtools=1.20 conda-forge::pigz=2.8"
     tag "${basecalled.baseName}"
 
     input:
@@ -16,7 +16,10 @@ process BAM_TO_FASTQ {
 
     script:
     """
-    samtools fastq --threads $task.cpus ${basecalled} | gzip > ${basecalled.baseName}.fastq.gz
+    samtools fastq \
+        --threads $task.cpus \
+        ${basecalled} \
+        | pigz -p $task.cpus > ${basecalled.baseName}.fastq.gz
     """
 
     stub:
@@ -29,7 +32,7 @@ process FILTER_READS {
     cpus 1
     memory '4 GB'
     time '60m'
-    conda "bioconda::filtlong=0.2.1"
+    conda "bioconda::filtlong=0.2.1 conda-forge::pigz=2.8"
     tag "${sample_id}"
 
     input:
@@ -44,7 +47,7 @@ process FILTER_READS {
         --min_mean_q 96.84 \
         --min_length 7500 --max_length 7900 \
         ${reads} \
-        | gzip > ${sample_id}_filtered.fastq.gz
+        | pigz -p $task.cpus > ${sample_id}_filtered.fastq.gz
     """
 
     stub:
@@ -57,7 +60,7 @@ process EXTRACT_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2"
+    conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2 conda-forge::pigz=2.8"
     tag "${sample_id}"
 
     input:
@@ -68,23 +71,27 @@ process EXTRACT_SEQUENCES {
 
     script:
     """
-    cutadapt -j $task.cpus \
+    cutadapt \
+        -j $task.cpus \
         -g atgccatagcatttttatcc...agcctgatacagattaaatc \
         --minimum-length 3839 --maximum-length 3939 \
         --discard-untrimmed \
         -o fwd.fastq ${fastq_gz}
 
-    cutadapt -j $task.cpus \
+    cutadapt \
+        -j $task.cpus \
         -g gatttaatctgtatcaggct...ggataaaaatgctatggcat \
         --minimum-length 3839 --maximum-length 3939 \
         --discard-untrimmed \
         -o rev.fastq ${fastq_gz}
 
-    seqkit seq --threads $task.cpus \
+    seqkit seq \
+        --threads $task.cpus \
         --reverse --complement rev.fastq \
         --out-file rev_rc.fastq
 
-    cat fwd.fastq rev_rc.fastq | gzip > ${sample_id}_cut.fastq.gz
+    cat fwd.fastq rev_rc.fastq | pigz -p $task.cpus > ${sample_id}_cut.fastq.gz
+    rm fwd.fastq rev_rc.fastq
     """
 
     stub:
@@ -108,7 +115,8 @@ process EXTRACT_FLYCODES {
 
     script:
     """
-    cutadapt -j $task.cpus \
+    cutadapt \
+        -j $task.cpus \
         -g cagggccccTCAAGA...GGCCAAGGGGGTCAC \
         --error-rate 0.2 \
         --minimum-length 30 --maximum-length 50 \
@@ -138,7 +146,8 @@ process CLUSTER_FLYCODES {
     script:
     """
     mkdir ${sample_id}_flycode_clusters
-    vsearch -cluster_size \
+    vsearch \
+        -cluster_size \
         $flycodes \
         -id 0.90 \
         -sizeout \
@@ -204,8 +213,9 @@ process ALIGN_SEQUENCES {
 
     script:
     """
-    prepare_alignments.sh $reference $grouped_sequences bam $task.cpus
-    cp $grouped_sequences/reference.fasta reference_all.fasta
+    prepare_alignments.sh ${reference} ${grouped_sequences} bam $task.cpus
+
+    cp ${grouped_sequences}/reference.fasta reference_all.fasta
     merge_alignments.py --bam_files bam
     """
 
@@ -234,13 +244,14 @@ process MEDAKA_CONSENSUS {
     script:
     """
     medaka inference \
-    --batch 200 --threads 2 --model r1041_e82_400bps_sup_v5.0.0  \
-    merged.sorted.bam results.contigs.hdf \
-    2> medaka_interference.log
+        --batch 200 --threads 2 \
+        --model r1041_e82_400bps_sup_v5.0.0  \
+        merged.sorted.bam results.contigs.hdf \
+        2> medaka_interference.log
 
     medaka sequence \
-    results.contigs.hdf reference_all.fasta ${sample_id}_assembly.fasta \
-    2> medaka_sequence.log
+        results.contigs.hdf reference_all.fasta ${sample_id}_assembly.fasta \
+        2> medaka_sequence.log
 
     nvidia-smi > nvidia-smi.txt
     """
