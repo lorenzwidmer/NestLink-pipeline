@@ -142,8 +142,8 @@ process GROUP_BY_FLYCODES {
     path(reference)
 
     output:
-    tuple path("clusters/*.fastq.gz"), path("references/*.fasta"), emit:grouped_reads
-    tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
+    tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), emit:grouped_reads
+    tuple val(sample_id), path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
 
     script:
     """
@@ -155,6 +155,7 @@ process GROUP_BY_FLYCODES {
 
     stub:
     """
+    touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references/reference.fasta
     touch flycodes.csv clusters.csv mapped_flycodes.csv
     """
 }
