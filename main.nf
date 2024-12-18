@@ -265,12 +265,8 @@ workflow prepareData {
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_SEQUENCES(FILTER_READS.out.reads)
     EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
-    CLUSTER_FLYCODES(EXTRACT_FLYCODES.out.flycodes)
-    GROUP_SEQUENCES(CLUSTER_FLYCODES.out.clusters, EXTRACT_SEQUENCES.out.sequences, reference_ch)
-    ALIGN_SEQUENCES(GROUP_SEQUENCES.out.binned_reads, reference_ch)
-
-    emit:
-    alignment = ALIGN_SEQUENCES.out.alignment
+    flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
+    GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
 }
 
 workflow {
