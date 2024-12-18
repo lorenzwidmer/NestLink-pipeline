@@ -170,23 +170,21 @@ process ALIGN_SEQUENCES {
     publishDir "${params.outdir}", mode: 'copy', enabled: workflow.profile == 'standard'
 
     input:
-    tuple val(sample_id), path(grouped_sequences)
-    path(reference)
+    tuple val(sample_id), path(clustes), path(references)
 
     output:
-    tuple val(sample_id), path("reference_all.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
+    tuple val(sample_id), path("reference.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
 
     script:
     """
-    prepare_alignments.sh ${reference} ${grouped_sequences} bam $task.cpus
+    prepare_alignments.sh $task.cpus
 
-    cp ${grouped_sequences}/reference.fasta reference_all.fasta
-    merge_alignments.py --bam_files bam
+    merge_alignments.py
     """
 
     stub:
     """
-    touch reference_all.fasta merged.sorted.bam merged.sorted.bam.bai
+    touch reference.fasta merged.sorted.bam merged.sorted.bam.bai
     """
 }
 
@@ -270,6 +268,7 @@ workflow prepareData {
     EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
     flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
     GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
+    ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
 }
 
 workflow {
