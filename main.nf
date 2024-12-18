@@ -146,7 +146,9 @@ process GROUP_BY_FLYCODES {
 
     script:
     """
-    group_by_flycodes.py --flycodes ${flycodes}
+    group_by_flycodes.py \
+        --flycodes ${flycodes} \
+        --sequence ${sequences}
     """
 
     stub:
