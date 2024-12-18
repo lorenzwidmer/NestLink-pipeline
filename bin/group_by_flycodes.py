@@ -78,7 +78,39 @@ def write_binned_reads(binned_reads):
                 writer.write(record)
 
 
-def main(flycodes, sequences):
+def write_references(clusters_df, reference_seq):
+    """
+    Writes a reference sequence fasta file for every cluster for.
+    Writes a fasta file containing the reference sequences of all clusters.
+    """
+    subprocess.run(["mkdir", "references"])
+
+    # Open and read the reference sequence.
+    with dnaio.open(reference_seq, mode="r") as reader:
+        for record in reader:
+            reference = record.sequence
+            break
+
+    # Splitting the reference intwo two parts using the flycode as delimiter.
+    reference = reference.split("GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg")
+
+    records = []
+
+    for cluster_id, flycode in clusters_df.rows():
+        file_name = f"references/{cluster_id}.fasta"
+        with dnaio.open(file_name, mode="w") as writer:
+            reference_sequence = f"{reference[0]}{flycode}{reference[1]}"
+            record = dnaio.SequenceRecord(cluster_id, reference_sequence)
+            writer.write(record)
+            records.append(record)
+
+    file_name = "references/reference.fasta"
+    with dnaio.open(file_name, mode="w") as writer:
+        for record in records:
+            writer.write(record)
+
+
+def main(flycodes, sequences, reference_seq):
     # Reading in the flycodes
     flycodes_df = flycodes_to_dataframe(flycodes)
 
@@ -148,6 +180,7 @@ def main(flycodes, sequences):
     binned_reads = bin_reads_by_flycodes(sequences, flycode_map)
 
     write_binned_reads(binned_reads)
+    write_references(clusters_df, reference_seq)
 
     # Writing dataframe to disk as csv.
     flycodes_df.write_csv("flycodes.csv")
@@ -159,5 +192,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--flycodes", type=str)
     parser.add_argument("--sequences", type=str)
+    parser.add_argument("--reference_seq", type=str)
     args = parser.parse_args()
-    main(args.flycodes, args.sequences)
+    main(args.flycodes, args.sequences, args.reference_seq)

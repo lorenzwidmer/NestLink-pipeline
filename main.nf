@@ -142,13 +142,15 @@ process GROUP_BY_FLYCODES {
     path(reference)
 
     output:
+    tuple path("clusters/*.fastq.gz"), path("references/*.fasta"), emit:grouped_reads
     tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
 
     script:
     """
     group_by_flycodes.py \
         --flycodes ${flycodes} \
-        --sequence ${sequences}
+        --sequence ${sequences} \
+        --reference_seq ${reference}
     """
 
     stub:
