@@ -269,6 +269,9 @@ workflow prepareData {
     flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
     GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
     ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
+
+    emit:
+    alignment = ALIGN_SEQUENCES.out.alignment
 }
 
 workflow {
