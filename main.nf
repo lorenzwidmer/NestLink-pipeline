@@ -130,68 +130,27 @@ process EXTRACT_FLYCODES {
     """
 }
 
-process CLUSTER_FLYCODES {
+process GROUP_BY_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::vsearch=2.28"
+    conda "bioconda::bwa=0.7.18 bioconda::samtools=1.21 bioconda::dnaio=1.2.2 conda-forge::polars=1.17.1 conda-forge::pyarrow=18.1.0 conda-forge::python-duckdb=1.1.3"
     tag "${sample_id}"
 
     input:
     tuple val(sample_id), path(flycodes)
 
     output:
-    tuple val(sample_id), path("${sample_id}_flycode_centroids.fasta"), path("${sample_id}_flycode_clusters"), emit: clusters
+    tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
 
     script:
     """
-    mkdir ${sample_id}_flycode_clusters
-    vsearch \
-        -cluster_size \
-        $flycodes \
-        -id 0.90 \
-        -sizeout \
-        -clusterout_id \
-        -centroids ${sample_id}_flycode_centroids.fasta \
-        -clusters ${sample_id}_flycode_clusters/cluster.fasta
+    group_by_flycodes.py --flycodes ${flycodes}
     """
 
     stub:
     """
-    mkdir ${sample_id}_flycode_clusters
-    touch ${sample_id}_flycode_centroids.fasta
-    """
-}
-
-process GROUP_SEQUENCES {
-    cpus 1
-    memory '4 GB'
-    time '60m'
-    conda "bioconda::dnaio=1.2.1 conda-forge::pandas=2.2.2"
-    tag "${sample_id}"
-
-    input:
-    tuple val(sample_id), path(centroids), path(clusters)
-    tuple val(sample_id2), path(sequences)
-    path(reference)
-
-    output:
-    tuple val(sample_id), path("${sample_id}_binned"), emit: binned_reads
-
-    script:
-    """
-    mkdir ${sample_id}_binned
-    group_by_flycodes.py \
-        --centroids $centroids \
-        --clusters $clusters \
-        --sequences $sequences \
-        --reference $reference \
-        --outdir ${sample_id}_binned
-    """
-
-    stub:
-    """
-    mkdir ${sample_id}_binned
+    touch flycodes.csv clusters.csv mapped_flycodes.csv
     """
 }
 
