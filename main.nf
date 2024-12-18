@@ -138,7 +138,8 @@ process GROUP_BY_FLYCODES {
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path(flycodes)
+    tuple val(sample_id), path(flycodes), path(sequences)
+    path(reference)
 
     output:
     tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv

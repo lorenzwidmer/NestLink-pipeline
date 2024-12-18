@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import subprocess
+from collections import defaultdict
 import dnaio
 import duckdb
 import polars as pl
@@ -50,7 +51,34 @@ def map_flycodes_to_clusters(file_path):
     return pl.DataFrame(data)
 
 
-def main(flycodes):
+def bin_reads_by_flycodes(file_path, flycode_map):
+    """
+    Returns a dictionary with clusterids as key and a list of corresponding reads (records) as value.
+    """
+    binned_reads = defaultdict(list)
+    with dnaio.open(file_path) as reader:
+        for record in reader:
+            readid = record.name.split('	')[0]
+            if readid in flycode_map:
+                cluster_id = flycode_map[readid]
+                binned_reads[cluster_id].append(record)
+    return binned_reads
+
+
+def write_binned_reads(binned_reads):
+    """
+    Writes new fastq.gz files containing reads binned by flycodes for alignment. The direction of the reads is all fwd.
+    """
+    subprocess.run(["mkdir", "clusters"])
+
+    for cluster_id, reads in binned_reads.items():
+        file_path = f"clusters/{cluster_id}.fastq.gz"
+        with dnaio.open(file_path, mode="w") as writer:
+            for record in reads:
+                writer.write(record)
+
+
+def main(flycodes, sequences):
     # Reading in the flycodes
     flycodes_df = flycodes_to_dataframe(flycodes)
 
@@ -96,6 +124,31 @@ def main(flycodes):
     # Mapping flycodes to their clusters.
     mapped_flycodes_df = map_flycodes_to_clusters("flycodes_to_clusters.sam")
 
+    # Filtering mapped_flycodes_df to only contain up to 100 reads per cluster.
+    mapped_flycodes_df = duckdb.sql(
+        """
+        WITH ranked_reads AS (
+            SELECT 
+                read_id,
+                cluster_id,
+                row_number() OVER (PARTITION BY cluster_id ORDER BY read_id) AS row_num
+            FROM mapped_flycodes_df
+        )
+        SELECT 
+            read_id,
+            cluster_id
+        FROM ranked_reads
+        WHERE row_num <= 100;
+        """
+    ).pl()
+
+    # Converting the flycode map into a dict.
+    flycode_map = {row["read_id"]: row["cluster_id"] for row in mapped_flycodes_df.iter_rows(named=True)}
+
+    binned_reads = bin_reads_by_flycodes(sequences, flycode_map)
+
+    write_binned_reads(binned_reads)
+
     # Writing dataframe to disk as csv.
     flycodes_df.write_csv("flycodes.csv")
     clusters_df.write_csv("clusters.csv")
@@ -105,5 +158,6 @@ def main(flycodes):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--flycodes", type=str)
+    parser.add_argument("--sequences", type=str)
     args = parser.parse_args()
-    main(args.flycodes)
+    main(args.flycodes, args.sequences)
