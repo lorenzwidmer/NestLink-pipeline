@@ -142,7 +142,7 @@ process GROUP_BY_FLYCODES {
     path(reference)
 
     output:
-    tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), emit:grouped_reads
+    tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads
     tuple val(sample_id), path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
 
     script:
@@ -170,10 +170,10 @@ process ALIGN_SEQUENCES {
     publishDir "${params.outdir}", mode: 'copy', enabled: workflow.profile == 'standard'
 
     input:
-    tuple val(sample_id), path(clustes), path(references)
+    tuple val(sample_id), path("clusters/*"), path("references/*"), path("references.fasta")
 
     output:
-    tuple val(sample_id), path("reference.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
+    tuple val(sample_id), path("references.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
 
     script:
     """
@@ -199,7 +199,7 @@ process MEDAKA_CONSENSUS {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    tuple val(sample_id), path(reference_all), path(bam), path(bai)
+    tuple val(sample_id), path(references), path(bam), path(bai)
 
     output:
     tuple val(sample_id), path("${sample_id}_assembly.fasta"), emit: consensus
@@ -213,7 +213,7 @@ process MEDAKA_CONSENSUS {
         2> medaka_interference.log
 
     medaka sequence \
-        results.contigs.hdf reference_all.fasta ${sample_id}_assembly.fasta \
+        results.contigs.hdf ${references} ${sample_id}_assembly.fasta \
         2> medaka_sequence.log
 
     nvidia-smi > nvidia-smi.txt
