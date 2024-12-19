@@ -155,7 +155,8 @@ process GROUP_BY_FLYCODES {
 
     stub:
     """
-    touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references/reference.fasta
+    mkdir clusters references
+    touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references.fasta
     touch flycodes.csv clusters.csv mapped_flycodes.csv
     """
 }
