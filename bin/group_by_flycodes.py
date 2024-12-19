@@ -53,7 +53,7 @@ def map_flycodes_to_clusters(file_path):
 
 def bin_reads_by_flycodes(file_path, flycode_map):
     """
-    Returns a dictionary with clusterids as key and a list of corresponding reads (records) as value.
+    Returns a dictionary with cluster_ids as key and a list of corresponding reads (records) as value.
     """
     binned_reads = defaultdict(list)
     with dnaio.open(file_path) as reader:
@@ -80,7 +80,7 @@ def write_binned_reads(binned_reads):
 
 def write_references(clusters_df, reference_seq):
     """
-    Writes a reference sequence fasta file for every cluster for.
+    Writes a reference sequence fasta file for every cluster.
     Writes a fasta file containing the reference sequences of all clusters.
     """
     subprocess.run(["mkdir", "references"])
@@ -90,7 +90,7 @@ def write_references(clusters_df, reference_seq):
         for record in reader:
             reference = record.sequence
             break
-
+    
     # Splitting the reference intwo two parts using the flycode as delimiter.
     reference = reference.split("GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg")
 
@@ -98,13 +98,13 @@ def write_references(clusters_df, reference_seq):
 
     for cluster_id, flycode in clusters_df.rows():
         file_name = f"references/{cluster_id}.fasta"
+        reference_sequence = f"{reference[0]}{flycode}{reference[1]}"
+        record = dnaio.SequenceRecord(cluster_id, reference_sequence)
+        records.append(record)
         with dnaio.open(file_name, mode="w") as writer:
-            reference_sequence = f"{reference[0]}{flycode}{reference[1]}"
-            record = dnaio.SequenceRecord(cluster_id, reference_sequence)
             writer.write(record)
-            records.append(record)
 
-    file_name = "references/reference.fasta"
+    file_name = "references.fasta"
     with dnaio.open(file_name, mode="w") as writer:
         for record in records:
             writer.write(record)

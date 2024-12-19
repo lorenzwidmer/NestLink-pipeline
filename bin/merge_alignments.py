@@ -9,7 +9,7 @@ def merge_bam_files(max_files=256):
     os.makedirs(temp_dir, exist_ok=True)
 
     # Get all BAM files
-    bam_files = glob.glob("*.bam")
+    bam_files = glob.glob("alignments/*.bam")
     temp_files = []
 
     # Merge in batches of max_files
