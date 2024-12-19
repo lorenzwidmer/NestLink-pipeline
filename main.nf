@@ -143,7 +143,7 @@ process GROUP_BY_FLYCODES {
 
     output:
     tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads
-    tuple val(sample_id), path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
+    tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), path("mapped_flycodes_filtered.csv"), emit:csv
 
     script:
     """
@@ -157,7 +157,7 @@ process GROUP_BY_FLYCODES {
     """
     mkdir clusters references
     touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references.fasta
-    touch flycodes.csv clusters.csv mapped_flycodes.csv
+    touch flycodes.csv clusters.csv mapped_flycodes.csv mapped_flycodes_filtered.csv
     """
 }
 
@@ -279,9 +279,6 @@ workflow consensusGeneration {
     main:
     MEDAKA_CONSENSUS(alignment_ch)
     FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
-
-    publish:
-    FLYCODE_TABLE.out.flycode_db >> 'results'
 }
 
 workflow {

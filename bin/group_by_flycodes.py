@@ -90,11 +90,11 @@ def write_references(clusters_df, reference_seq):
         for record in reader:
             reference = record.sequence
             break
-    
+
     # Splitting the reference intwo two parts using the flycode as delimiter.
     reference = reference.split("GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg")
 
-    records = [] # for storing all cluster records.
+    records = []  # for storing all cluster records.
 
     # Writing individual reference files for each cluster.
     for cluster_id, flycode in clusters_df.rows():
@@ -124,6 +124,7 @@ def main(flycodes, sequences, reference_seq):
     flycodes_df = flycodes_df.with_columns(
         pl.col("flycode").str.contains(valid_flycode).alias("is_valid_flycode")
     )
+    flycodes_df.write_csv("flycodes.csv")
 
     # Getting high-quality flycodes, they have to be valid and be seen more than 10 times.
     clusters_df = duckdb.sql(
@@ -141,6 +142,7 @@ def main(flycodes, sequences, reference_seq):
             COUNT(flycode) >= 10;
         """
     ).pl()
+    clusters_df.write_csv("clusters.csv")
 
     # Writing the high-quality flycodes into clusters.fasta to be used as a reference for alignment.
     with dnaio.open("clusters.fasta", mode="w") as writer:
@@ -160,6 +162,7 @@ def main(flycodes, sequences, reference_seq):
 
     # Mapping flycodes to their clusters.
     mapped_flycodes_df = map_flycodes_to_clusters("flycodes_to_clusters.sam")
+    mapped_flycodes_df.write_csv("mapped_flycodes.csv")
 
     # Filtering mapped_flycodes_df to only contain up to 100 reads per cluster.
     mapped_flycodes_df = duckdb.sql(
@@ -178,6 +181,7 @@ def main(flycodes, sequences, reference_seq):
         WHERE row_num <= 100;
         """
     ).pl()
+    mapped_flycodes_df.write_csv("mapped_flycodes_filtered.csv")
 
     # Converting the flycode map into a dict.
     flycode_map = {row["read_id"]: row["cluster_id"] for row in mapped_flycodes_df.iter_rows(named=True)}
@@ -188,11 +192,6 @@ def main(flycodes, sequences, reference_seq):
     # Writing binned reads and references to disk.
     write_binned_reads(binned_reads)
     write_references(clusters_df, reference_seq)
-
-    # Writing dataframes to disk as csv.
-    flycodes_df.write_csv("flycodes.csv")
-    clusters_df.write_csv("clusters.csv")
-    mapped_flycodes_df.write_csv("mapped_flycodes.csv")
 
 
 if __name__ == "__main__":
