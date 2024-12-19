@@ -94,8 +94,9 @@ def write_references(clusters_df, reference_seq):
     # Splitting the reference intwo two parts using the flycode as delimiter.
     reference = reference.split("GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg")
 
-    records = []
+    records = [] # for storing all cluster records.
 
+    # Writing individual reference files for each cluster.
     for cluster_id, flycode in clusters_df.rows():
         file_name = f"references/{cluster_id}.fasta"
         reference_sequence = f"{reference[0]}{flycode}{reference[1]}"
@@ -104,6 +105,7 @@ def write_references(clusters_df, reference_seq):
         with dnaio.open(file_name, mode="w") as writer:
             writer.write(record)
 
+    # Writing a reference file containing all clusters (used by medaka sequence).
     file_name = "references.fasta"
     with dnaio.open(file_name, mode="w") as writer:
         for record in records:
@@ -111,6 +113,9 @@ def write_references(clusters_df, reference_seq):
 
 
 def main(flycodes, sequences, reference_seq):
+    """
+    Main function for binning reads by their flycodes and preparing them for the alignment process.
+    """
     # Reading in the flycodes
     flycodes_df = flycodes_to_dataframe(flycodes)
 
@@ -177,18 +182,21 @@ def main(flycodes, sequences, reference_seq):
     # Converting the flycode map into a dict.
     flycode_map = {row["read_id"]: row["cluster_id"] for row in mapped_flycodes_df.iter_rows(named=True)}
 
+    # Binning reads by flycode cluster, storing them in a dict.
     binned_reads = bin_reads_by_flycodes(sequences, flycode_map)
 
+    # Writing binned reads and references to disk.
     write_binned_reads(binned_reads)
     write_references(clusters_df, reference_seq)
 
-    # Writing dataframe to disk as csv.
+    # Writing dataframes to disk as csv.
     flycodes_df.write_csv("flycodes.csv")
     clusters_df.write_csv("clusters.csv")
     mapped_flycodes_df.write_csv("mapped_flycodes.csv")
 
 
 if __name__ == "__main__":
+    # Reading arguments and calling the main function.
     parser = argparse.ArgumentParser()
     parser.add_argument("--flycodes", type=str)
     parser.add_argument("--sequences", type=str)
