@@ -130,68 +130,33 @@ process EXTRACT_FLYCODES {
     """
 }
 
-process CLUSTER_FLYCODES {
+process GROUP_BY_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::vsearch=2.28"
+    conda "bioconda::bwa=0.7.18 bioconda::samtools=1.21 bioconda::dnaio=1.2.2 conda-forge::polars=1.17.1 conda-forge::pyarrow=18.1.0 conda-forge::python-duckdb=1.1.3"
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path(flycodes)
-
-    output:
-    tuple val(sample_id), path("${sample_id}_flycode_centroids.fasta"), path("${sample_id}_flycode_clusters"), emit: clusters
-
-    script:
-    """
-    mkdir ${sample_id}_flycode_clusters
-    vsearch \
-        -cluster_size \
-        $flycodes \
-        -id 0.90 \
-        -sizeout \
-        -clusterout_id \
-        -centroids ${sample_id}_flycode_centroids.fasta \
-        -clusters ${sample_id}_flycode_clusters/cluster.fasta
-    """
-
-    stub:
-    """
-    mkdir ${sample_id}_flycode_clusters
-    touch ${sample_id}_flycode_centroids.fasta
-    """
-}
-
-process GROUP_SEQUENCES {
-    cpus 1
-    memory '4 GB'
-    time '60m'
-    conda "bioconda::dnaio=1.2.1 conda-forge::pandas=2.2.2"
-    tag "${sample_id}"
-
-    input:
-    tuple val(sample_id), path(centroids), path(clusters)
-    tuple val(sample_id2), path(sequences)
+    tuple val(sample_id), path(flycodes), path(sequences)
     path(reference)
 
     output:
-    tuple val(sample_id), path("${sample_id}_binned"), emit: binned_reads
+    tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads
+    tuple val(sample_id), path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), emit:csv
 
     script:
     """
-    mkdir ${sample_id}_binned
     group_by_flycodes.py \
-        --centroids $centroids \
-        --clusters $clusters \
-        --sequences $sequences \
-        --reference $reference \
-        --outdir ${sample_id}_binned
+        --flycodes ${flycodes} \
+        --sequence ${sequences} \
+        --reference_seq ${reference}
     """
 
     stub:
     """
-    mkdir ${sample_id}_binned
+    touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references/reference.fasta
+    touch flycodes.csv clusters.csv mapped_flycodes.csv
     """
 }
 
@@ -205,23 +170,21 @@ process ALIGN_SEQUENCES {
     publishDir "${params.outdir}", mode: 'copy', enabled: workflow.profile == 'standard'
 
     input:
-    tuple val(sample_id), path(grouped_sequences)
-    path(reference)
+    tuple val(sample_id), path("clusters/*"), path("references/*"), path("references.fasta")
 
     output:
-    tuple val(sample_id), path("reference_all.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
+    tuple val(sample_id), path("references.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
 
     script:
     """
-    prepare_alignments.sh ${reference} ${grouped_sequences} bam $task.cpus
+    prepare_alignments.sh $task.cpus
 
-    cp ${grouped_sequences}/reference.fasta reference_all.fasta
-    merge_alignments.py --bam_files bam
+    merge_alignments.py
     """
 
     stub:
     """
-    touch reference_all.fasta merged.sorted.bam merged.sorted.bam.bai
+    touch reference.fasta merged.sorted.bam merged.sorted.bam.bai
     """
 }
 
@@ -236,7 +199,7 @@ process MEDAKA_CONSENSUS {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    tuple val(sample_id), path(reference_all), path(bam), path(bai)
+    tuple val(sample_id), path(references), path(bam), path(bai)
 
     output:
     tuple val(sample_id), path("${sample_id}_assembly.fasta"), emit: consensus
@@ -250,7 +213,7 @@ process MEDAKA_CONSENSUS {
         2> medaka_interference.log
 
     medaka sequence \
-        results.contigs.hdf reference_all.fasta ${sample_id}_assembly.fasta \
+        results.contigs.hdf ${references} ${sample_id}_assembly.fasta \
         2> medaka_sequence.log
 
     nvidia-smi > nvidia-smi.txt
@@ -303,9 +266,9 @@ workflow prepareData {
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_SEQUENCES(FILTER_READS.out.reads)
     EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
-    CLUSTER_FLYCODES(EXTRACT_FLYCODES.out.flycodes)
-    GROUP_SEQUENCES(CLUSTER_FLYCODES.out.clusters, EXTRACT_SEQUENCES.out.sequences, reference_ch)
-    ALIGN_SEQUENCES(GROUP_SEQUENCES.out.binned_reads, reference_ch)
+    flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
+    GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
+    ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
 
     emit:
     alignment = ALIGN_SEQUENCES.out.alignment
