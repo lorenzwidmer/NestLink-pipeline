@@ -6,9 +6,11 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 
 ## Requirements
 ### Local and cluster execution
-- Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
 - Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html))
+- Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
 - mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `projectDir/bin/`)
+### Local execution only
+- Podman ([https://podman.io/](https://podman.io/))
 ### Cluster execution only
 - Slurm workflow manager
 - Singularity
@@ -20,8 +22,6 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 `sbatch run_NL-pipeline.slurm`
 
 ## Running the pipeline locally
-> [!NOTE]
-> Consensus sequence generation with medaka has to be run manually.
 1. Prepare the pipeline as described above.
 2. Run the pipeline:
 `bash run_NL-pipeline.sh`

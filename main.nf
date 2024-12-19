@@ -167,8 +167,6 @@ process ALIGN_SEQUENCES {
     conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
     tag "${sample_id}"
 
-    publishDir "${params.outdir}", mode: 'copy', enabled: workflow.profile == 'standard'
-
     input:
     tuple val(sample_id), path("clusters/*"), path("references/*"), path("references.fasta")
 
@@ -215,8 +213,6 @@ process MEDAKA_CONSENSUS {
     medaka sequence \
         results.contigs.hdf ${references} ${sample_id}_assembly.fasta \
         2> medaka_sequence.log
-
-    nvidia-smi > nvidia-smi.txt
     """
 
     stub:
@@ -274,6 +270,19 @@ workflow prepareData {
     alignment = ALIGN_SEQUENCES.out.alignment
 }
 
+workflow consensusGeneration {
+    take:
+    alignment_ch
+    reference_ch
+
+    main:
+    MEDAKA_CONSENSUS(alignment_ch)
+    FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
+
+    publish:
+    FLYCODE_TABLE.out.flycode_db >> 'results'
+}
+
 workflow {
     log.info """
     ┌───────────────────────────────────┐
@@ -287,9 +296,5 @@ workflow {
     reference_ch = Channel.fromPath(params.reference)
 
     prepareData(basecalled_ch, reference_ch)
-
-    if (workflow.profile == 'cluster') {
-        MEDAKA_CONSENSUS(prepareData.out.alignment)
-        FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
-    }
+    consensusGeneration(prepareData.out.alignment, reference_ch)
 }
