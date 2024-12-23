@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import subprocess
 from collections import defaultdict
 import dnaio
@@ -18,6 +19,12 @@ def flycodes_to_dataframe(file_path):
         for record in reader:
             row = {"read_id": record.name, "flycode": record.sequence}
             data.append(row)
+
+    if not data:
+        raise ValueError(
+            f"No flycodes found in file '{file_path}'. "
+            "Please check the flycode and or sequence extraction processes."
+        )
 
     return pl.DataFrame(data)
 
@@ -48,6 +55,11 @@ def map_flycodes_to_clusters(file_path):
                 row = {"read_id": read_id, "cluster_id": cluster_id}
                 data.append(row)
 
+    if not data:
+        raise ValueError(
+            f"No aligned flycodes found in file '{file_path}'."
+        )
+
     return pl.DataFrame(data)
 
 
@@ -55,21 +67,29 @@ def bin_reads_by_flycodes(file_path, flycode_map):
     """
     Returns a dictionary with cluster_ids as key and a list of corresponding reads (records) as value.
     """
+    if not flycode_map:
+        raise ValueError(
+            "The flycode map is empty. Check mapped_flycodes_df filtering."
+        )
     binned_reads = defaultdict(list)
     with dnaio.open(file_path) as reader:
         for record in reader:
-            readid = record.name.split('	')[0]
+            readid = record.name.split('\t')[0]
             if readid in flycode_map:
                 cluster_id = flycode_map[readid]
                 binned_reads[cluster_id].append(record)
-    return binned_reads
+    if not binned_reads:
+        raise ValueError(
+            "No reads binned."
+        )
+    return dict(binned_reads)
 
 
 def write_binned_reads(binned_reads):
     """
     Writes new fastq.gz files containing reads binned by flycodes for alignment. The direction of the reads is all fwd.
     """
-    subprocess.run(["mkdir", "clusters"])
+    os.makedirs("clusters")
 
     for cluster_id, reads in binned_reads.items():
         file_path = f"clusters/{cluster_id}.fastq.gz"
@@ -83,16 +103,32 @@ def write_references(clusters_df, reference_seq):
     Writes a reference sequence fasta file for every cluster.
     Writes a fasta file containing the reference sequences of all clusters.
     """
-    subprocess.run(["mkdir", "references"])
+    os.makedirs("references")
 
     # Open and read the reference sequence.
     with dnaio.open(reference_seq, mode="r") as reader:
+        reference_record = None
         for record in reader:
-            reference = record.sequence
-            break
+            reference_record = record
+            break  # stop after the first record
+
+        if reference_record is None:
+            raise ValueError(
+                f"No record found in the reference sequence file '{reference_seq}'. "
+                "Please check the file."
+            )
+
+        reference_sequence = reference_record.sequence
 
     # Splitting the reference intwo two parts using the flycode as delimiter.
-    reference = reference.split("GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg")
+    flycode_delimiter = "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg"
+    reference = reference_sequence.split(flycode_delimiter)
+
+    if len(reference) != 2:
+        raise ValueError(
+            f"The reference sequence does not split into two parts with "
+            f"the delimiter '{flycode_delimiter}'. Please check the file or delimiter."
+        )
 
     records = []  # for storing all cluster records.
 
@@ -150,15 +186,15 @@ def main(flycodes, sequences, reference_seq):
             writer.write(dnaio.SequenceRecord(cluster_id, sequence))
 
     # Indexing the reference.
-    subprocess.run(["bwa", "index", "clusters.fasta"])
+    subprocess.run(["bwa", "index", "clusters.fasta"], check=True)
 
     # Alining all flycodes to the reference.
     with open("flycodes_to_clusters.sai", "w") as sai_file:
-        subprocess.run(["bwa", "aln", "clusters.fasta", flycodes], stdout=sai_file)
+        subprocess.run(["bwa", "aln", "clusters.fasta", flycodes], stdout=sai_file, check=True)
 
     # Generating alignments in the SAM format
     with open("flycodes_to_clusters.sam", "w") as sam_file:
-        subprocess.run(["bwa", "samse", "clusters.fasta", "flycodes_to_clusters.sai", flycodes], stdout=sam_file)
+        subprocess.run(["bwa", "samse", "clusters.fasta", "flycodes_to_clusters.sai", flycodes], stdout=sam_file, check=True)
 
     # Mapping flycodes to their clusters.
     mapped_flycodes_df = map_flycodes_to_clusters("flycodes_to_clusters.sam")
