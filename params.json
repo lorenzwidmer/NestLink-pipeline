@@ -1,5 +1,13 @@
 {
-    "data": "data/*.bam",
+    "data": "data/20240627_TM.bam",
     "reference": "data/reference.fasta",
+    "filter_min_length": 7500,
+    "filter_max_length": 7900,
+    "extract_gene_adapter": "atgccatagcatttttatcc...agcctgatacagattaaatc",
+    "extract_gene_adapter_rc": "gatttaatctgtatcaggct...ggataaaaatgctatggcat",
+    "extract_gene_min_length": 3839,
+    "extract_gene_max_length": 3939,
+    "extract_flycode_adapter": "cagggccccTCAAGA...GGCCAAGGGGGTCAC",
+    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
     "outdir": "results"
 }

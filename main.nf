@@ -45,7 +45,8 @@ process FILTER_READS {
     """
     filtlong \
         --min_mean_q 96.84 \
-        --min_length 7500 --max_length 7900 \
+        --min_length $params.filter_min_length \
+        --max_length $params.filter_max_length \
         ${reads} \
         | pigz -p $task.cpus > ${sample_id}_filtered.fastq.gz
     """
@@ -71,17 +72,21 @@ process EXTRACT_SEQUENCES {
 
     script:
     """
+    extract_gene_adapter_rc="\$(echo '${params.extract_gene_adapter}' | tr 'ACGTatgc.' 'TGCAtgca.' | rev)"
+
     cutadapt \
         -j $task.cpus \
-        -g atgccatagcatttttatcc...agcctgatacagattaaatc \
-        --minimum-length 3839 --maximum-length 3939 \
+        -g $params.extract_gene_adapter \
+        --minimum-length $params.extract_gene_min_length \
+        --maximum-length $params.extract_gene_max_length \
         --discard-untrimmed \
         -o fwd.fastq ${fastq_gz}
 
     cutadapt \
         -j $task.cpus \
-        -g gatttaatctgtatcaggct...ggataaaaatgctatggcat \
-        --minimum-length 3839 --maximum-length 3939 \
+        -g $params.extract_gene_adapter_rc \
+        --minimum-length $params.extract_gene_min_length \
+        --maximum-length $params.extract_gene_max_length \
         --discard-untrimmed \
         -o rev.fastq ${fastq_gz}
 
@@ -91,7 +96,6 @@ process EXTRACT_SEQUENCES {
         --out-file rev_rc.fastq
 
     cat fwd.fastq rev_rc.fastq | pigz -p $task.cpus > ${sample_id}_cut.fastq.gz
-    rm fwd.fastq rev.fastq rev_rc.fastq
     """
 
     stub:
@@ -117,7 +121,7 @@ process EXTRACT_FLYCODES {
     """
     cutadapt \
         -j $task.cpus \
-        -g cagggccccTCAAGA...GGCCAAGGGGGTCAC \
+        -g $params.extract_flycode_adapter \
         --error-rate 0.2 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
