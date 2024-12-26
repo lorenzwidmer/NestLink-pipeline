@@ -91,7 +91,7 @@ process EXTRACT_SEQUENCES {
         --out-file rev_rc.fastq
 
     cat fwd.fastq rev_rc.fastq | pigz -p $task.cpus > ${sample_id}_cut.fastq.gz
-    rm fwd.fastq rev_rc.fastq
+    rm fwd.fastq rev.fastq rev_rc.fastq
     """
 
     stub:
@@ -136,6 +136,8 @@ process GROUP_BY_FLYCODES {
     time '60m'
     conda "bioconda::bwa=0.7.18 bioconda::samtools=1.21 bioconda::dnaio=1.2.2 conda-forge::polars=1.17.1 conda-forge::pyarrow=18.1.0 conda-forge::python-duckdb=1.1.3"
     tag "${sample_id}"
+
+    publishDir params.outdir, mode: 'copy', pattern: '*.csv'
 
     input:
     tuple val(sample_id), path(flycodes), path(sequences)
@@ -183,7 +185,7 @@ process ALIGN_SEQUENCES {
 
     stub:
     """
-    touch reference.fasta merged.sorted.bam merged.sorted.bam.bai
+    touch merged.sorted.bam merged.sorted.bam.bai
     """
 }
 
@@ -202,6 +204,7 @@ process MEDAKA_CONSENSUS {
 
     output:
     tuple val(sample_id), path("${sample_id}_assembly.fasta"), emit: consensus
+    tuple path("medaka_interference.log"), path("medaka_sequence.log"), emit: log
 
     script:
     """
@@ -219,6 +222,7 @@ process MEDAKA_CONSENSUS {
     stub:
     """
     touch ${sample_id}_assembly.fasta
+    touch medaka_interference.log medaka_sequence.log
     """
 }
 
@@ -253,7 +257,7 @@ process FLYCODE_TABLE {
 }
 
 /* Workflows */
-workflow prepareData {
+workflow nestlink {
     take:
     basecalled_ch
     reference_ch
@@ -266,18 +270,7 @@ workflow prepareData {
     flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
     GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
     ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
-
-    emit:
-    alignment = ALIGN_SEQUENCES.out.alignment
-}
-
-workflow consensusGeneration {
-    take:
-    alignment_ch
-    reference_ch
-
-    main:
-    MEDAKA_CONSENSUS(alignment_ch)
+    MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
     FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
 }
 
@@ -293,6 +286,5 @@ workflow {
     basecalled_ch = Channel.fromPath(params.data)
     reference_ch = Channel.fromPath(params.reference)
 
-    prepareData(basecalled_ch, reference_ch)
-    consensusGeneration(prepareData.out.alignment, reference_ch)
+    nestlink(basecalled_ch, reference_ch)
 }
