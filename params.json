@@ -4,7 +4,6 @@
     "filter_min_length": 7500,
     "filter_max_length": 7900,
     "extract_gene_adapter": "atgccatagcatttttatcc...agcctgatacagattaaatc",
-    "extract_gene_adapter_rc": "gatttaatctgtatcaggct...ggataaaaatgctatggcat",
     "extract_gene_min_length": 3839,
     "extract_gene_max_length": 3939,
     "extract_flycode_adapter": "cagggccccTCAAGA...GGCCAAGGGGGTCAC",

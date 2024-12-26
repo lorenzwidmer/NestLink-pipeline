@@ -72,7 +72,8 @@ process EXTRACT_SEQUENCES {
 
     script:
     """
-    extract_gene_adapter_rc="\$(echo '${params.extract_gene_adapter}' | tr 'ACGTatgc.' 'TGCAtgca.' | rev)"
+    extract_gene_adapter_rc=\$(echo '${params.extract_gene_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
+    echo \$extract_gene_adapter_rc
 
     cutadapt \
         -j $task.cpus \
@@ -84,7 +85,7 @@ process EXTRACT_SEQUENCES {
 
     cutadapt \
         -j $task.cpus \
-        -g $params.extract_gene_adapter_rc \
+        -g \$extract_gene_adapter_rc \
         --minimum-length $params.extract_gene_min_length \
         --maximum-length $params.extract_gene_max_length \
         --discard-untrimmed \
