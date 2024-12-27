@@ -252,11 +252,13 @@ process FLYCODE_TABLE {
 
     script:
     """
-    flycode_assignment.py \
-        --poi "TM287/288_FC" \
-        --assembly ${assembly} \
-        --file_name ${sample_id}_fc.fasta \
-        --reference ${reference}
+    variant_calling.py \
+        --assembly_path ${assembly} \
+        --reference_path ${reference} \
+        --flycode ccccTCAAGA GGCCAAGGGG \
+        --orf1 gaggaattaacc gatcagaagaag \
+        --orf2 gggtgatgaacg GCAAGCTCCA \
+        --output ${sample_id}_fc.fasta
     """
     stub:
     """
