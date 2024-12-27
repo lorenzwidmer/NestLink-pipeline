@@ -97,6 +97,7 @@ process EXTRACT_SEQUENCES {
         --out-file rev_rc.fastq
 
     cat fwd.fastq rev_rc.fastq | pigz -p $task.cpus > ${sample_id}_cut.fastq.gz
+    rm fwd.fastq rev.fastq rev_rc.fastq
     """
 
     stub:
@@ -186,6 +187,8 @@ process ALIGN_SEQUENCES {
     prepare_alignments.sh $task.cpus
 
     merge_alignments.py
+
+    rm temp/*.bam
     """
 
     stub:
