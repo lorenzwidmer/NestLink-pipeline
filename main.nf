@@ -205,7 +205,7 @@ process MEDAKA_CONSENSUS {
     clusterOptions '--gpus=1'
     tag "${sample_id}"
 
-    publishDir params.outdir, mode: 'copy'
+    publishDir params.outdir, mode: 'copy', pattern: '*.fasta'
 
     input:
     tuple val(sample_id), path(references), path(bam), path(bai)
