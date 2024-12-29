@@ -8,5 +8,11 @@
     "extract_gene_max_length": 3939,
     "extract_flycode_adapter": "cagggccccTCAAGA...GGCCAAGGGGGTCAC",
     "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
+    "experiment_name": "NL22",
+    "flycode_pattern": "ccccTCAAGA GGCCAAGGGG",
+    "orf1_name": "TM287",
+    "orf1_pattern": "gaggaattaacc gatcagaagaag",
+    "orf2_name": "TM288",
+    "orf2_pattern": "gggtgatgaacg GCAAGCTCCA",
     "outdir": "results"
 }

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-
 import argparse
 import re
 import dnaio
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
+
 
 def extract_sequences(file_path, flycode, orf1, orf2=None):
     """
@@ -25,7 +25,7 @@ def extract_sequences(file_path, flycode, orf1, orf2=None):
 
     def extract_subsequence(sequence, start_match, end_match):
         return sequence[start_match.end():end_match.start()]
-    
+
     sequences = {}
 
     fc_start = re.compile(flycode[0], re.IGNORECASE)
@@ -70,8 +70,10 @@ def extract_sequences(file_path, flycode, orf1, orf2=None):
                         sequences[cluster_id] = (flycode_sequence, orf1_sequence)
     return sequences
 
+
 def translate(sequence):
     return str(Seq(sequence).translate())
+
 
 def compare_aa_sequences(sequence, reference):
     changes = []
@@ -88,14 +90,15 @@ def compare_aa_sequences(sequence, reference):
 
     return changes
 
-def get_aa_changes(sequences, reference, orf2=False):
+
+def get_aa_changes(sequences, reference, orf2):
     """
     Determines the amino acid changes between a reference sequence and consensus sequences.clear
 
     Parameters:
         sequences (dict):
         refereces (dict):
-        orf2 (bool):
+        orf2 (str):
 
     Returns:
         dict
@@ -106,7 +109,7 @@ def get_aa_changes(sequences, reference, orf2=False):
     if len(reference) != 1:
         raise ValueError(
             "The reference file does not contain exactly one record."
-    )
+        )
     _, reference_sequence = next(iter(reference.items()))
     reference_orf1_aa = translate(reference_sequence[1])
     if orf2:
@@ -120,10 +123,11 @@ def get_aa_changes(sequences, reference, orf2=False):
         if orf2:
             orf2_aa = translate(values[2])
             orf2_aa_changes = compare_aa_sequences(orf2_aa, reference_orf2_aa)
-            aa_changes[cluster_id]=(flycode_aa, orf1_aa_changes, orf2_aa_changes)
+            aa_changes[cluster_id] = (flycode_aa, orf1_aa_changes, orf2_aa_changes)
         else:
-            aa_changes[cluster_id]=(flycode_aa, orf1_aa_changes)
+            aa_changes[cluster_id] = (flycode_aa, orf1_aa_changes)
     return aa_changes
+
 
 def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
     """
@@ -142,7 +146,7 @@ def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
         if orf2:
             orf_changes = tuple(values[1]), tuple(values[2])   # both orfs
         else:
-            orf_changes = tuple(values[1]) # only orf1
+            orf_changes = tuple(values[1])  # only orf1
         variants[orf_changes].append(flycode)
 
     with open(output_path, "w") as file:
@@ -158,26 +162,35 @@ def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
                 file.write(f">{prefix}|{orf1}={variant_orf1}\n")
                 file.write(f"{''.join(flycodes)}\n")
 
-def main(assembly_path, reference_path, output_path, flycode, orf1, orf2):
-    sequences = extract_sequences(assembly_path, flycode, orf1, orf2)
-    reference = extract_sequences(reference_path, flycode, orf1, orf2)
 
-    aa_changes = get_aa_changes(sequences, reference, True)
+def main(args):
+    assembly_path = args.assembly_path
+    reference_path = args.reference_path
+    output = args.output
+    flycode_pattern = args.flycode_pattern
+    orf1_name, orf1_pattern = args.orf1_name, args.orf1_pattern
+    orf2_name, orf2_pattern = args.orf2_name, args.orf2_pattern
+    experiment_name = args.experiment_name
 
-    write_flycode_db(aa_changes, output_path, "NL22", "TM287", "TM288")
+    sequences = extract_sequences(assembly_path, flycode_pattern, orf1_pattern, orf2_pattern)
+    reference = extract_sequences(reference_path, flycode_pattern, orf1_pattern, orf2_pattern)
 
-    pass
+    aa_changes = get_aa_changes(sequences, reference, orf2_name)
+
+    write_flycode_db(aa_changes, output, experiment_name, orf1_name, orf2_name)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--assembly_path", type=str)
-    parser.add_argument("--reference_path", type=str)
-    parser.add_argument("--output", type=str)
-    parser.add_argument("--flycode", nargs="+", type=str)
-    parser.add_argument("--orf1", nargs="+", type=str)
-    parser.add_argument("--orf2", nargs="+", type=str)
-
+    parser.add_argument("--assembly_path", type=str, required=True)
+    parser.add_argument("--reference_path", type=str, required=True)
+    parser.add_argument("--output", type=str, required=True)
+    parser.add_argument("--experiment_name", type=str, required=True)
+    parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
+    parser.add_argument("--orf1_name", type=str, required=True)
+    parser.add_argument("--orf1_pattern", nargs=2, type=str, required=True)
+    parser.add_argument("--orf2_name", type=str, default=None)
+    parser.add_argument("--orf2_pattern", nargs=2, type=str, default=None)
 
     args = parser.parse_args()
-    main(args.assembly_path, args.reference_path, args.output, args.flycode, args.orf1, args.orf2)
+    main(args)
