@@ -98,7 +98,7 @@ def write_binned_reads(binned_reads):
                 writer.write(record)
 
 
-def write_references(clusters_df, reference_seq):
+def write_references(clusters_df, reference_seq, reference_flycode):
     """
     Writes a reference sequence fasta file for every cluster.
     Writes a fasta file containing the reference sequences of all clusters.
@@ -121,13 +121,12 @@ def write_references(clusters_df, reference_seq):
         reference_sequence = reference_record.sequence
 
     # Splitting the reference intwo two parts using the flycode as delimiter.
-    flycode_delimiter = "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg"
-    reference = reference_sequence.split(flycode_delimiter)
+    reference = reference_sequence.split(reference_flycode)
 
     if len(reference) != 2:
         raise ValueError(
             f"The reference sequence does not split into two parts with "
-            f"the delimiter '{flycode_delimiter}'. Please check the file or delimiter."
+            f"the delimiter '{reference_flycode}'. Please check the file or delimiter."
         )
 
     records = []  # for storing all cluster records.
@@ -148,7 +147,7 @@ def write_references(clusters_df, reference_seq):
             writer.write(record)
 
 
-def main(flycodes, sequences, reference_seq):
+def main(flycodes, sequences, reference_seq, reference_flycode):
     """
     Main function for binning reads by their flycodes and preparing them for the alignment process.
     """
@@ -227,7 +226,7 @@ def main(flycodes, sequences, reference_seq):
 
     # Writing binned reads and references to disk.
     write_binned_reads(binned_reads)
-    write_references(clusters_df, reference_seq)
+    write_references(clusters_df, reference_seq, reference_flycode)
 
 
 if __name__ == "__main__":
@@ -236,5 +235,6 @@ if __name__ == "__main__":
     parser.add_argument("--flycodes", type=str)
     parser.add_argument("--sequences", type=str)
     parser.add_argument("--reference_seq", type=str)
+    parser.add_argument("--reference_flycode", type=str)
     args = parser.parse_args()
-    main(args.flycodes, args.sequences, args.reference_seq)
+    main(args.flycodes, args.sequences, args.reference_seq, args.reference_flycode)

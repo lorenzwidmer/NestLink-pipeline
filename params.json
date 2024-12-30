@@ -1,6 +1,7 @@
 {
     "data": "data/20240627_TM.bam",
     "reference": "data/reference.fasta",
+    "reference_flycode": "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGcgg",
     "filter_min_length": 7500,
     "filter_max_length": 7900,
     "extract_gene_adapter": "atgccatagcatttttatcc...agcctgatacagattaaatc",
