@@ -274,11 +274,12 @@ process FLYCODE_TABLE {
 /* Workflows */
 workflow nestlink {
     take:
-    filter_in_ch
+    basecalled_ch
     reference_ch
 
     main:
-    FILTER_READS(filter_in_ch)
+    BAM_TO_FASTQ(basecalled_ch)
+    FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_SEQUENCES(FILTER_READS.out.reads)
     EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
     flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
@@ -297,10 +298,8 @@ workflow {
     """
     .stripIndent()
 
-    sample_id_ch = Channel.value("barcode05")
     basecalled_ch = Channel.fromPath(params.data)
-    filter_in_ch = sample_id_ch.combine(basecalled_ch)
     reference_ch = Channel.fromPath(params.reference)
 
-    nestlink(filter_in_ch, reference_ch)
+    nestlink(basecalled_ch, reference_ch)
 }
