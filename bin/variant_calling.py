@@ -151,14 +151,6 @@ def get_aa_changes(sequences, reference, orf2=None):
 
 def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=None):
     """
-    Writes a flycode database in fasta format to disk.
-
-    Parameters:
-        aa_changes (dict): A dictionairy containing flycodes and amino acid changes.
-        ouput_path (str): Filename/ path of the flycode database to be written.
-        orf1 (srt): Name of orf1.
-        orf2 (str): Name of orf2.
-
     Write a flycode database in FASTA format, grouping identical variants.
 
     Args:

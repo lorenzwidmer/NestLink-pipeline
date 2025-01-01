@@ -181,10 +181,10 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
         reference_seq (str): Path to the reference sequence FASTA file.
         reference_flycode (str): Flycode sequence used in the reference sequence.
     """
-    # Reading in the flycodes
+    # Reading in the flycodes.
     flycodes_df = flycodes_to_dataframe(flycodes)
 
-    # Add a new column with True/False indicating a valid flycode
+    # Add a new column with True/False indicating a valid flycode.
     valid_flycode = r"^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$"
     flycodes_df = flycodes_df.with_columns(
         pl.col("flycode").str.contains(valid_flycode).alias("is_valid_flycode")
@@ -217,11 +217,11 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
     # Indexing the reference.
     subprocess.run(["bwa", "index", "clusters.fasta"], check=True)
 
-    # Alining all flycodes to the reference.
+    # Aligning all flycodes to the reference.
     with open("flycodes_to_clusters.sai", "w") as sai_file:
         subprocess.run(["bwa", "aln", "-N", "-n 2", "clusters.fasta", flycodes], stdout=sai_file, check=True)
 
-    # Generating alignments in the SAM format
+    # Generating alignments in the SAM format,
     with open("flycodes_to_clusters.sam", "w") as sam_file:
         subprocess.run(["bwa", "samse", "clusters.fasta", "flycodes_to_clusters.sai", flycodes], stdout=sam_file, check=True)
 

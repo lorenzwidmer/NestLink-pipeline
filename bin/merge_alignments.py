@@ -5,6 +5,12 @@ import glob
 
 
 def merge_bam_files(max_files=256):
+    """
+    Merge all BAM files from the 'alignments' folder in batches, then produce a final merged file.
+
+    Args:
+        max_files (int, optional): Maximum number of files to merge in one batch. Default is 256.
+    """
     temp_dir = "temp"
     os.makedirs(temp_dir, exist_ok=True)
 
@@ -24,17 +30,28 @@ def merge_bam_files(max_files=256):
 
 
 def merge_bams(files_list, output_file):
+    """
+    Use samtools to merge a list of BAM files into a single output BAM file.
+
+    Args:
+        files_list (list[str]): Paths to the BAM files to merge.
+        output_file (str): Path where the merged BAM file will be created.
+    """
     cmd = ["samtools", "merge", output_file] + files_list
     subprocess.run(cmd, check=True)
 
 
 def main():
+    """
+    Main function to merge, sort, and index BAM files using samtools.
+    """
     merge_bam_files()
 
     cmd_sort = ["samtools", "sort", "merged.bam", "-o", "merged.sorted.bam"]
+    subprocess.run(cmd_sort, check=True)
+
     cmd_index = ["samtools", "index", "merged.sorted.bam"]
-    subprocess.run(cmd_sort)
-    subprocess.run(cmd_index)
+    subprocess.run(cmd_index, check=True)
 
 
 if __name__ == "__main__":
