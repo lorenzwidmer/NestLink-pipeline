@@ -1,0 +1,19 @@
+{
+    "data": "data/barcode06.bam",
+    "reference": "data/KDELR-GFP_FC.fasta",
+    "reference_flycode": "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGCtgcgg",
+    "filter_min_length": 1600,
+    "filter_max_length": 1900,
+    "extract_gene_adapter": "CCTGATCCGCC...tctagagggtcgagtctaga",
+    "extract_gene_min_length": 1500,
+    "extract_gene_max_length": 1600,
+    "extract_flycode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
+    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
+    "experiment_name": "KD00",
+    "flycode_pattern": "ccccTCAAGA CTCGTGCCCAGAGG",
+    "orf1_name": "KDELR",
+    "orf1_pattern": "GATCCGCC GCAAGCTCCAGTGGC",
+    "orf2_name": "",
+    "orf2_pattern": "",
+    "outdir": "results"
+}
