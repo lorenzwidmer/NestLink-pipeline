@@ -189,7 +189,7 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
 
     # Alining all flycodes to the reference.
     with open("flycodes_to_clusters.sai", "w") as sai_file:
-        subprocess.run(["bwa", "aln", "clusters.fasta", flycodes], stdout=sai_file, check=True)
+        subprocess.run(["bwa", "aln", "-N", "-n 2", "clusters.fasta", flycodes], stdout=sai_file, check=True)
 
     # Generating alignments in the SAM format
     with open("flycodes_to_clusters.sam", "w") as sam_file:
