@@ -9,16 +9,17 @@ from Bio.Seq import Seq
 
 def extract_sequences(file_path, flycode, orf1, orf2=None):
     """
-    Parses a fasta file, and extracts the flycode, orf1 and orf2 (optional) sequences.
+    Parse a FASTA file to extract flycode, ORF1, and optional ORF2 sequences.
 
-    Parameters:
-        file_path (str): Fasta file to parse.
-        flycode (tuple(str, str)): Start and end patterns of the flycode.
-        orf1 (tuple(str, str)): Start and end patterns of orf1.
-        orf2 (tuple(str, str)): Start and end patterns of orf2.
+    Args:
+        file_path (str): Path to the FASTA file.
+        flycode (tuple): A (start_pattern, end_pattern) tuple for the flycode.
+        orf1 (tuple): A (start_pattern, end_pattern) tuple for ORF1.
+        orf2 (tuple, optional): A (start_pattern, end_pattern) tuple for ORF2 (default: None).
 
     Returns:
-        dict. A dictionary where keys are cluster IDs and values are tuples containing the extracted flycode, ORF1, and optionally ORF2 sequences.
+        dict: Keys are cluster IDs; values are tuples of extracted sequences 
+              (flycode_seq, orf1_seq, [orf2_seq if provided]) in-frame only.
     """
     def is_in_frame(start_match, end_match):
         return (end_match.start() - start_match.end()) % 3 == 0
@@ -72,10 +73,29 @@ def extract_sequences(file_path, flycode, orf1, orf2=None):
 
 
 def translate(sequence):
+    """
+    Translate a nucleotide sequence into an amino acid sequence.
+
+    Args:
+        sequence (str): The nucleotide sequence.
+
+    Returns:
+        str: The corresponding amino acid sequence.
+    """
     return str(Seq(sequence).translate())
 
 
 def compare_aa_sequences(sequence, reference):
+    """
+     Compare two amino acid sequences and identify positions where they differ.
+
+    Args:
+        sequence (str): The amino acid sequence to compare.
+        reference (str): The reference amino acid sequence.
+
+    Returns:
+        list: A list of amino acid changes, in the format '<refAA><position><newAA>' or 'wt' if they are identical.
+    """
     changes = []
 
     if len(sequence) == len(reference):
@@ -86,22 +106,22 @@ def compare_aa_sequences(sequence, reference):
                 changes.append(change)
 
         if reference == sequence:
-            changes.append('wt')
+            changes.append("wt")
 
     return changes
 
 
-def get_aa_changes(sequences, reference, orf2):
+def get_aa_changes(sequences, reference, orf2=None):
     """
-    Determines the amino acid changes between a reference sequence and consensus sequences.clear
+    Determine amino acid changes for each cluster ID relative to a the reference.
 
-    Parameters:
-        sequences (dict):
-        refereces (dict):
-        orf2 (str):
+    Args:
+        sequences (dict): Dictionary mapping cluster IDs to extracted (flycode, ORF1, [ORF2]) sequences.
+        reference (dict): Dictionary containing exactly one reference entry of the same format.
+        orf2 (str): Name of the second ORF if present, otherwise None.
 
     Returns:
-        dict
+        dict: Maps each cluster ID to a tuple of (flycode_aa, ORF1_changes, [ORF2_changes]).
     """
     aa_changes = {}
 
@@ -129,7 +149,7 @@ def get_aa_changes(sequences, reference, orf2):
     return aa_changes
 
 
-def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
+def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=None):
     """
     Writes a flycode database in fasta format to disk.
 
@@ -138,6 +158,15 @@ def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
         ouput_path (str): Filename/ path of the flycode database to be written.
         orf1 (srt): Name of orf1.
         orf2 (str): Name of orf2.
+
+    Write a flycode database in FASTA format, grouping identical variants.
+
+    Args:
+        aa_changes (dict): A dictionary of cluster IDs to (flycode_aa, ORF1_changes, [ORF2_changes]).
+        output_path (str): Path to the output FASTA file.
+        prefix (str): Prefix (e.g., experiment name) to include in FASTA headers.
+        orf1 (str): Name of ORF1.
+        orf2 (str, optional): Name of ORF2 if present, otherwise None.
     """
     variants = defaultdict(list)
 
@@ -164,6 +193,12 @@ def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=False):
 
 
 def main(args):
+    """
+    Coordinate the extraction, translation, variant calling, and database writing of flycodes.
+
+    Args:
+        args (Namespace): Parsed command-line arguments.
+    """
     assembly_path = args.assembly_path
     reference_path = args.reference_path
     output = args.output

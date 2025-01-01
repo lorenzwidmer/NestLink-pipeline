@@ -10,8 +10,13 @@ import polars as pl
 
 def flycodes_to_dataframe(file_path):
     """
-    Reads a fasta file containing all flycodes from a sequencing experiment extracted by cutadapt.
-    Returns a polars dataframe with the read_ids and their corresponding flycodes.
+    Read a FASTA of extracted flycodes into a polars DataFrame with read IDs and their corresponding flycodes.
+
+    Args:
+        file_path (str): Path to the FASTA file with extracted flycodes.
+
+    Returns:
+        pl.DataFrame: A DataFrame with 'read_id' and 'flycode' columns.
     """
     data = []
 
@@ -31,8 +36,13 @@ def flycodes_to_dataframe(file_path):
 
 def map_flycodes_to_clusters(file_path):
     """
-    Reads a sam file of flycodes aligned to a reference containing high-quality flycodes "clusters".
-    Returns a polars dataframe with the read_ids and their corresponding cluster_ids.
+    Parse a SAM file of flycodes aligned to high-quality flycodes (clusters) into a polars DataFrame mapping read IDs to cluster IDs.
+
+    Args:
+        file_path (str): Path to the SAM file with aligned flycodes.
+
+    Returns:
+        pl.DataFrame: A DataFrame with 'read_id' and 'cluster_id' columns.
     """
     data = []
 
@@ -65,7 +75,14 @@ def map_flycodes_to_clusters(file_path):
 
 def bin_reads_by_flycodes(file_path, flycode_map):
     """
-    Returns a dictionary with cluster_ids as key and a list of corresponding reads (records) as value.
+    Group reads by cluster ID using a flycode mapping, returning a dict of binned reads.
+
+    Args:
+        file_path (str): Path to the FASTQ.GZ file containing reads.
+        flycode_map (dict): Dictionairy containing mapping of read IDs to cluster IDs.
+
+    Returns:
+        dict: A dictionary where keys are cluster IDs and values are lists of read records.
     """
     if not flycode_map:
         raise ValueError(
@@ -87,7 +104,10 @@ def bin_reads_by_flycodes(file_path, flycode_map):
 
 def write_binned_reads(binned_reads):
     """
-    Writes new fastq.gz files containing reads binned by flycodes for alignment. The direction of the reads is all fwd.
+    Write reads binned by cluster to a compressed FASTQ.GZ file in the 'clusters' folder.
+
+    Args:
+        binned_reads (dict): A dictionary with cluster IDs as keys and read lists as values.
     """
     os.makedirs("clusters")
 
@@ -100,8 +120,12 @@ def write_binned_reads(binned_reads):
 
 def write_references(clusters_df, reference_seq, reference_flycode):
     """
-    Writes a reference sequence fasta file for every cluster.
-    Writes a fasta file containing the reference sequences of all clusters.
+    Create per-cluster reference FASTA files and a combined reference FASTA file in the 'references' folder.
+
+    Args:
+        clusters_df (pl.DataFrame): DataFrame with cluster IDs and their flycodes.
+        reference_seq (str): Path to the reference sequence FASTA file.
+        reference_flycode (str): Flycode sequence used in the reference sequence.
     """
     os.makedirs("references")
 
@@ -149,7 +173,13 @@ def write_references(clusters_df, reference_seq, reference_flycode):
 
 def main(flycodes, sequences, reference_seq, reference_flycode):
     """
-    Main function for binning reads by their flycodes and preparing them for the alignment process.
+    Main function to validate and cluster flycodes, bin reads based on theses clusters and write them to disk.
+
+    Args:
+        flycodes (str): Path to the FASTA file with extracted flycodes.
+        sequences (str): Path to the FASTQ.GZ file with original read sequences.
+        reference_seq (str): Path to the reference sequence FASTA file.
+        reference_flycode (str): Flycode sequence used in the reference sequence.
     """
     # Reading in the flycodes
     flycodes_df = flycodes_to_dataframe(flycodes)
