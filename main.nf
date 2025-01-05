@@ -5,7 +5,7 @@ process BAM_TO_FASTQ {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::samtools=1.20 conda-forge::pigz=2.8"
+    conda "bioconda::samtools=1.21 conda-forge::pigz=2.8"
     tag "${basecalled.baseName}"
 
     input:
@@ -61,7 +61,7 @@ process EXTRACT_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::cutadapt=4.9 bioconda::seqkit=2.8.2 conda-forge::pigz=2.8"
+    conda "bioconda::cutadapt=5.0 bioconda::seqkit=2.9.0 conda-forge::pigz=2.8"
     tag "${sample_id}"
 
     input:
@@ -110,7 +110,7 @@ process EXTRACT_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::cutadapt=4.9"
+    conda "bioconda::cutadapt=5.0"
     tag "${sample_id}"
 
     input:
@@ -174,7 +174,7 @@ process ALIGN_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::minimap2=2.28 bioconda::samtools=1.20"
+    conda "bioconda::minimap2=2.28 bioconda::samtools=1.21"
     tag "${sample_id}"
 
     input:
@@ -199,7 +199,7 @@ process ALIGN_SEQUENCES {
 }
 
 process MEDAKA_CONSENSUS {
-    container 'ontresearch/medaka:latest'
+    container 'ontresearch/medaka:sha447c70a639b8bcf17dc49b51e74dfcde6474837b'
     cpus 8
     memory '16 GB'
     time '60m'
@@ -239,7 +239,7 @@ process FLYCODE_TABLE {
     cpus 1
     memory '16 GB'
     time '60m'
-    conda "bioconda::dnaio=1.2.1 conda-forge::biopython=1.84"
+    conda "bioconda::dnaio=1.2.2 conda-forge::biopython=1.84"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy'
