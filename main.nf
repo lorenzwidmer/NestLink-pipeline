@@ -21,11 +21,6 @@ process BAM_TO_FASTQ {
         ${basecalled} \
         | pigz -p $task.cpus > ${basecalled.baseName}.fastq.gz
     """
-
-    stub:
-    """
-    touch ${basecalled.baseName}.fastq.gz
-    """
 }
 
 process FILTER_READS {
@@ -50,11 +45,6 @@ process FILTER_READS {
         ${reads} \
         | pigz -p $task.cpus > ${sample_id}_filtered.fastq.gz
     """
-
-    stub:
-    """
-    touch ${sample_id}_filtered.fastq.gz
-    """
 }
 
 process EXTRACT_SEQUENCES {
@@ -73,7 +63,6 @@ process EXTRACT_SEQUENCES {
     script:
     """
     extract_gene_adapter_rc=\$(echo '${params.extract_gene_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
-    echo \$extract_gene_adapter_rc
 
     cutadapt \
         -j $task.cpus \
@@ -99,11 +88,6 @@ process EXTRACT_SEQUENCES {
     cat fwd.fastq rev_rc.fastq | pigz -p $task.cpus > ${sample_id}_cut.fastq.gz
     rm fwd.fastq rev.fastq rev_rc.fastq
     """
-
-    stub:
-    """
-    touch ${sample_id}_cut.fastq.gz
-    """
 }
 
 process EXTRACT_FLYCODES {
@@ -128,11 +112,6 @@ process EXTRACT_FLYCODES {
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
         --fasta ${fastq_gz} > ${sample_id}_flycodes.fasta
-    """
-
-    stub:
-    """
-    touch ${sample_id}_flycodes.fasta
     """
 }
 
@@ -161,13 +140,6 @@ process GROUP_BY_FLYCODES {
         --reference_seq ${reference} \
         --reference_flycode ${params.reference_flycode}
     """
-
-    stub:
-    """
-    mkdir clusters references
-    touch clusters/ffffffff-ffff-ffff-ffff-ffffffffffff.fastq.gz references/ffffffff-ffff-ffff-ffff-ffffffffffff.fasta references.fasta
-    touch flycodes.csv clusters.csv mapped_flycodes.csv mapped_flycodes_filtered.csv
-    """
 }
 
 process ALIGN_SEQUENCES {
@@ -189,12 +161,7 @@ process ALIGN_SEQUENCES {
 
     merge_alignments.py
 
-    rm temp/*.bam
-    """
-
-    stub:
-    """
-    touch merged.sorted.bam merged.sorted.bam.bai
+    rm temp/*.bam merged.bam
     """
 }
 
@@ -227,12 +194,6 @@ process MEDAKA_CONSENSUS {
         results.contigs.hdf ${references} ${sample_id}_assembly.fasta \
         2> medaka_sequence.log
     """
-
-    stub:
-    """
-    touch ${sample_id}_assembly.fasta
-    touch medaka_interference.log medaka_sequence.log
-    """
 }
 
 process FLYCODE_TABLE {
@@ -264,10 +225,6 @@ process FLYCODE_TABLE {
         --orf1_name ${params.orf1_name} \
         --orf1_pattern ${params.orf1_pattern} \
         ${orf2_options}
-    """
-    stub:
-    """
-    touch ${sample_id}_fc.fasta
     """
 }
 
