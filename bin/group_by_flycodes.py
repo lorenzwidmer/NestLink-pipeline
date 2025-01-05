@@ -42,7 +42,7 @@ def map_flycodes_to_clusters(file_path):
         file_path (str): Path to the SAM file with aligned flycodes.
 
     Returns:
-        pl.DataFrame: A DataFrame with 'read_id' and 'cluster_id' columns.
+        pl.DataFrame: A DataFrame with 'read_id', 'cluster_id', 'cigar' and 'edit_distance' columns.
     """
     data = []
 
@@ -56,13 +56,15 @@ def map_flycodes_to_clusters(file_path):
             fields = line.strip().split("\t")
 
             # Extract necessary fields
-            read_id = fields[0]     # Barcode name
-            cluster_id = fields[2]  # Reference cluster name (aligned to)
+            read_id = fields[0]     # Barcode name (Query template NAME - QNAME)
+            cluster_id = fields[2]  # Reference cluster name (Reference sequence NAME - RNAME)
             flag = int(fields[1])   # SAM flag
+            cigar = fields[5]       # CIGAR string
 
             # Check if the alignment is valid (flag 4 means unaligned)
             if cluster_id != "*" and not (flag & 4):
-                row = {"read_id": read_id, "cluster_id": cluster_id}
+                edit_distance = fields[12].split(":")[2]
+                row = {"read_id": read_id, "cluster_id": cluster_id, "cigar": cigar, "edit_distance": edit_distance}
                 data.append(row)
 
     if not data:
@@ -229,19 +231,23 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
     mapped_flycodes_df = map_flycodes_to_clusters("flycodes_to_clusters.sam")
     mapped_flycodes_df.write_csv("mapped_flycodes.csv")
 
-    # Filtering mapped_flycodes_df to only contain up to 100 reads per cluster.
+    # Filtering mapped_flycodes_df to only contain up to 100 reads with low edit distance flycodes per cluster.
     mapped_flycodes_df = duckdb.sql(
         """
         WITH ranked_reads AS (
             SELECT 
                 read_id,
                 cluster_id,
-                row_number() OVER (PARTITION BY cluster_id ORDER BY read_id) AS row_num
+                cigar,
+                edit_distance,
+                row_number() OVER (PARTITION BY cluster_id ORDER BY edit_distance ASC) AS row_num
             FROM mapped_flycodes_df
         )
         SELECT 
             read_id,
-            cluster_id
+            cluster_id,
+            cigar,
+            edit_distance
         FROM ranked_reads
         WHERE row_num <= 100;
         """
