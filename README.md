@@ -3,7 +3,7 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 
 ## Requirements
 ### Local and cluster execution
-- Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html), on the cluster it has to be installed in a mamba/ conda environment called `nextflow`. 
+- Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html)), on the cluster it has to be installed in a mamba/ conda environment called `nextflow`. 
 - Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
 - mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `./bin/`)
 ### Local execution only
