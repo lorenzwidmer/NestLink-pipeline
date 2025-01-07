@@ -3,9 +3,9 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 
 ## Requirements
 ### Local and cluster execution
-- Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html))
+- Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html), on the cluster it has to be installed in a mamba/ conda environment called `nextflow`. 
 - Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
-- mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `projectDir/bin/`)
+- mini_align ([mini_align.sh](https://raw.githubusercontent.com/nanoporetech/pomoxis/master/scripts/mini_align) placed in `./bin/`)
 ### Local execution only
 - Podman ([https://podman.io/](https://podman.io/))
 ### Cluster execution only
@@ -22,3 +22,22 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 1. Prepare the pipeline as described above.
 2. Run the pipeline:
 `bash run_NL-pipeline.sh`
+
+## Parameters
+| Parameter                 | Type    | Description                                  |
+|---------------------------|---------|----------------------------------------------|
+| `data`                    | String  | Path to input BAM file.                      |
+| `reference`               | String  | Path to reference FASTA file.                |
+| `filter_min_length`       | Integer | Read filtering minimum length threshold.     |
+| `filter_max_length`       | Integer | Read filtering maximum length threshold.     |
+| `extract_seq_adapter`     | String  | Linked adapter for sequence trimming.        |
+| `extract_seq_min_length`  | Integer | Sequence trimming minimum length threshold.  |
+| `extract_seq_max_length`  | Integer | Sequence trimming minimum length threshold.  |
+| `extract_flycode_adapter` | String  | Linked adapter for flycode extraction.       |
+| `medaka_dorado_model`     | String  | Dorado model used for basecalling.           |
+| `flycode_pattern`         | String  | Sequences flanking flyodes.                  |
+| `orf1_name`               | String  | Name of ORF 1.                               |
+| `orf1_pattern`            | String  | Sequences flanking ORF 1.                    |
+| `orf2_name`               | String  | Name of ORF2 (optional).                     |
+| `orf2_pattern`            | String  | Sequences flanking ORF 2 (optional).         |
+| `outdir`                  | String  | Output directory for results.                |
