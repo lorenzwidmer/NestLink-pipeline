@@ -13,21 +13,21 @@ process EXTRACT_SEQUENCES {
 
     script:
     """
-    extract_gene_adapter_rc=\$(echo '${params.extract_gene_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
+    extract_seq_adapter_rc=\$(echo '${params.extract_seq_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
 
     cutadapt \
         -j $task.cpus \
-        -g $params.extract_gene_adapter \
-        --minimum-length $params.extract_gene_min_length \
-        --maximum-length $params.extract_gene_max_length \
+        -g $params.extract_seq_adapter \
+        --minimum-length $params.extract_seq_min_length \
+        --maximum-length $params.extract_seq_max_length \
         --discard-untrimmed \
         -o fwd.fastq ${fastq_gz}
 
     cutadapt \
         -j $task.cpus \
-        -g \$extract_gene_adapter_rc \
-        --minimum-length $params.extract_gene_min_length \
-        --maximum-length $params.extract_gene_max_length \
+        -g \$extract_seq_adapter_rc \
+        --minimum-length $params.extract_seq_min_length \
+        --maximum-length $params.extract_seq_max_length \
         --discard-untrimmed \
         -o rev.fastq ${fastq_gz}
 
