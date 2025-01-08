@@ -16,16 +16,16 @@ process FLYCODE_TABLE {
 
     script:
     def orf2_options = params.orf2_name && params.orf2_pattern ? 
-        "--orf2_name ${params.orf2_name} --orf2_pattern ${params.orf2_pattern}" : ''
+        "--orf2_name ${params.orf2_name} --orf2_pattern ${params.orf2_pattern.join(' ')}" : ""
     """
     variant_calling.py \
         --assembly_path ${assembly} \
         --reference_path ${reference} \
         --experiment_name ${params.experiment_name} \
         --output ${sample_id}_fc.fasta \
-        --flycode_pattern ${params.flycode_pattern} \
+        --flycode_pattern ${params.flycode_pattern.join(' ')} \
         --orf1_name ${params.orf1_name} \
-        --orf1_pattern ${params.orf1_pattern} \
+        --orf1_pattern ${params.orf1_pattern.join(' ')} \
         ${orf2_options}
     """
 }
