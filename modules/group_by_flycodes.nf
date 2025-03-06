@@ -13,11 +13,12 @@ process GROUP_BY_FLYCODES {
 
     output:
     tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads
-    tuple path("flycodes.csv"), path("clusters.csv"), path("mapped_flycodes.csv"), path("mapped_flycodes_filtered.csv"), emit:csv
+    tuple path("${sample_id}_reads.csv"), path("${sample_id}_clusters.csv"), path("${sample_id}_mapped_reads.csv"), path("${sample_id}_mapped_reads_filtered.csv"), emit:csv
 
     script:
     """
     group_by_flycodes.py \
+        --sample_id ${sample_id} \
         --flycodes ${flycodes} \
         --sequence ${sequences} \
         --reference_seq ${reference} \

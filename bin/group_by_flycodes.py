@@ -173,11 +173,12 @@ def write_references(clusters_df, reference_seq, reference_flycode):
             writer.write(record)
 
 
-def main(flycodes, sequences, reference_seq, reference_flycode):
+def main(sample_id, flycodes, sequences, reference_seq, reference_flycode):
     """
     Main function to validate and cluster flycodes, bin reads based on theses clusters and write them to disk.
 
     Args:
+        sample_id (str): The sample id.
         flycodes (str): Path to the FASTA file with extracted flycodes.
         sequences (str): Path to the FASTQ.GZ file with original read sequences.
         reference_seq (str): Path to the reference sequence FASTA file.
@@ -191,7 +192,7 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
     flycodes_df = flycodes_df.with_columns(
         pl.col("flycode").str.contains(valid_flycode).alias("is_valid_flycode")
     )
-    flycodes_df.write_csv("flycodes.csv")
+    flycodes_df.write_csv(f"{sample_id}_reads.csv")
 
     # Getting high-quality flycodes, they have to be valid and be seen more than 10 times.
     clusters_df = duckdb.sql(
@@ -209,7 +210,7 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
             COUNT(flycode) >= 10;
         """
     ).pl()
-    clusters_df.write_csv("clusters.csv")
+    clusters_df.write_csv(f"{sample_id}_clusters.csv")
 
     # Writing the high-quality flycodes into clusters.fasta to be used as a reference for alignment.
     with dnaio.open("clusters.fasta", mode="w") as writer:
@@ -229,7 +230,7 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
 
     # Mapping flycodes to their clusters.
     mapped_flycodes_df = map_flycodes_to_clusters("flycodes_to_clusters.sam")
-    mapped_flycodes_df.write_csv("mapped_flycodes.csv")
+    mapped_flycodes_df.write_csv(f"{sample_id}_mapped_reads.csv")
 
     # Filtering mapped_flycodes_df to only contain up to 100 reads with low edit distance flycodes per cluster.
     mapped_flycodes_df = duckdb.sql(
@@ -252,7 +253,7 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
         WHERE row_num <= 100;
         """
     ).pl()
-    mapped_flycodes_df.write_csv("mapped_flycodes_filtered.csv")
+    mapped_flycodes_df.write_csv(f"{sample_id}_mapped_reads_filtered.csv")
 
     # Converting the flycode map into a dict.
     flycode_map = {row["read_id"]: row["cluster_id"] for row in mapped_flycodes_df.iter_rows(named=True)}
@@ -268,9 +269,10 @@ def main(flycodes, sequences, reference_seq, reference_flycode):
 if __name__ == "__main__":
     # Reading arguments and calling the main function.
     parser = argparse.ArgumentParser()
+    parser.add_argument("--sample_id", type=str)
     parser.add_argument("--flycodes", type=str)
     parser.add_argument("--sequences", type=str)
     parser.add_argument("--reference_seq", type=str)
     parser.add_argument("--reference_flycode", type=str)
     args = parser.parse_args()
-    main(args.flycodes, args.sequences, args.reference_seq, args.reference_flycode)
+    main(args.sample_id, args.flycodes, args.sequences, args.reference_seq, args.reference_flycode)
