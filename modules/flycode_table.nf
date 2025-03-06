@@ -2,7 +2,7 @@ process FLYCODE_TABLE {
     cpus 1
     memory '16 GB'
     time '60m'
-    conda "bioconda::dnaio=1.2.2 conda-forge::biopython=1.84"
+    conda "bioconda::dnaio=1.2.2 conda-forge::biopython=1.85 conda-forge::polars=1.17.1"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy'

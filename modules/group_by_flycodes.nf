@@ -2,7 +2,7 @@ process GROUP_BY_FLYCODES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::bwa=0.7.18 bioconda::samtools=1.21 bioconda::dnaio=1.2.2 conda-forge::polars=1.17.1 conda-forge::pyarrow=18.1.0 conda-forge::python-duckdb=1.1.3"
+    conda "bioconda::bwa=0.7.18 bioconda::samtools=1.21 bioconda::dnaio=1.2.3 conda-forge::polars=1.22.0 conda-forge::pyarrow=19.0.1 conda-forge::python-duckdb=1.2.0"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy', pattern: '*.csv'
