@@ -1,4 +1,4 @@
-process FLYCODE_TABLE {
+process VARIANT_CALLING {
     cpus 1
     memory '16 GB'
     time '60m'

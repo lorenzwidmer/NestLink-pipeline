@@ -2,7 +2,6 @@
 
 nextflow run main.nf \
     -profile standard \
-    -params-file params.json \
+    -params-file kdelr.json \
     -resume \
     -with-report \
-    -with-timeline

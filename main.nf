@@ -8,7 +8,7 @@ include { EXTRACT_FLYCODES  } from './modules/extract_flycodes.nf'
 include { GROUP_BY_FLYCODES } from './modules/group_by_flycodes.nf'
 include { ALIGN_SEQUENCES   } from './modules/align_sequences.nf'
 include { MEDAKA_CONSENSUS  } from './modules/medaka_consensus.nf'
-include { FLYCODE_TABLE     } from './modules/flycode_table.nf'
+include { VARIANT_CALLING   } from './modules/variant_calling.nf'
 
 /* Workflows */
 workflow nestlink {
@@ -25,7 +25,7 @@ workflow nestlink {
     GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
     ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
     MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
-    FLYCODE_TABLE(MEDAKA_CONSENSUS.out.consensus, reference_ch)
+    VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus, reference_ch)
 }
 
 workflow {
