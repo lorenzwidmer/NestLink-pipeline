@@ -12,17 +12,15 @@ process VARIANT_CALLING {
     path(reference)
 
     output:
-    path "${sample_id}_fc.fasta", emit: flycode_db
+    path "${sample_id}_variants.csv", emit: variants_db
 
     script:
     """
     variant_calling.py \
         --assembly_path ${assembly} \
         --reference_path ${reference} \
-        --experiment_name ${params.experiment_name} \
-        --output ${sample_id}_fc.fasta \
+        --sample_id ${sample_id} \
         --flycode_pattern ${params.flycode_pattern.join(' ')} \
-        --orf_name ${params.orf_name} \
         --orf_pattern ${params.orf_pattern.join(' ')}
     """
 }

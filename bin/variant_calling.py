@@ -2,6 +2,7 @@
 import argparse
 import re
 import dnaio
+import polars as pl
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -79,24 +80,18 @@ def compare_aa_sequences(sequence, reference):
         reference (str): The reference amino acid sequence.
 
     Returns:
-        list: A list of amino acid changes, in the format '<refAA><position><newAA>' or 'wt' if they are identical.
+        list: A list of amino acid changes, as tuples '<position>,<refAA>,<newAA>'.
     """
-    changes = []
-
-    if len(sequence) == len(reference):
-
-        for position in range(len(reference)):
-            if sequence[position] != reference[position]:
-                change = f"{reference[position]}{position + 1}{sequence[position]}"
-                changes.append(change)
-
-        if reference == sequence:
-            changes.append("wt")
+    changes = [
+        (position, ref_base, seq_base)
+        for position, (ref_base, seq_base) in enumerate(zip(reference, sequence))
+        if ref_base != seq_base
+    ]
 
     return changes
 
 
-def get_aa_changes(sequences, reference):
+def get_variants(sequences, reference):
     """
     Determine amino acid changes for each consensus sequence relative to a the reference.
 
@@ -105,9 +100,9 @@ def get_aa_changes(sequences, reference):
         reference (dict): Dictionary containing exactly one reference entry of the same format.
 
     Returns:
-        dict: Maps each cluster ID to a tuple of (flycode_aa, ORF_changes).
+       pl.DataFrame: Contains cluster_ID, flycode, amino acid change position, reference amino acid, variant amino acid and variant type.
     """
-    aa_changes = {}
+    data = []
 
     # Getting reference sequences on a protein level
     if len(reference) != 1:
@@ -118,36 +113,29 @@ def get_aa_changes(sequences, reference):
     reference_orf_aa = translate(reference_sequence[1])
 
     # Looping through all sequences
-    for cluster_id, values in sequences.items():
-        flycode_aa = translate(values[0])
-        orf_aa = translate(values[1])
-        orf_aa_changes = compare_aa_sequences(orf_aa, reference_orf_aa)
-        aa_changes[cluster_id] = (flycode_aa, orf_aa_changes)
-    return aa_changes
+    for cluster_id, (flycode_nt, orf_nt) in sequences.items():
+        flycode_aa, orf_aa = translate(flycode_nt), translate(orf_nt)
 
+        if (len(orf_aa) != len(reference_orf_aa)):
+            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "indel"})
+            continue
 
-def write_flycode_db(aa_changes, output_path, prefix, orf):
-    """
-    Write a flycode database in FASTA format, grouping identical variants.
+        if (orf_aa == reference_orf_aa):
+            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "wt"})
+            continue
 
-    Args:
-        aa_changes (dict): A dictionary of cluster IDs to (flycode_aa, ORF_changes).
-        output_path (str): Path to the output FASTA file.
-        prefix (str): Prefix (e.g., experiment name) to include in FASTA headers.
-        orf (str): Name of ORF.
-    """
-    variants = defaultdict(list)
+        if (orf_aa != reference_orf_aa):
+            orf_aa_changes = compare_aa_sequences(orf_aa, reference_orf_aa)
+            data.extend({
+                "cluster_id": cluster_id,
+                "flycode": flycode_aa,
+                "position": pos,
+                "reference_aa": ref_aa,
+                "variant_aa": var_aa,
+                "variant_type": "change"
+            } for pos, ref_aa, var_aa in orf_aa_changes)
 
-    for cluster_id, values in aa_changes.items():
-        flycode = values[0]
-        orf_changes = tuple(values[1])
-        variants[orf_changes].append(flycode)
-
-    with open(output_path, "w") as file:
-        for variant, flycodes in variants.items():
-            variant_orf = ",".join(variant)
-            file.write(f">{prefix}|{orf}={variant_orf}\n")
-            file.write(f"{''.join(flycodes)}\n")
+    return pl.DataFrame(data)
 
 
 def main(args):
@@ -159,27 +147,23 @@ def main(args):
     """
     assembly_path = args.assembly_path
     reference_path = args.reference_path
-    output = args.output
+    sample_id = args.sample_id
     flycode_pattern = args.flycode_pattern
-    orf_name, orf_pattern = args.orf_name, args.orf_pattern
-    experiment_name = args.experiment_name
+    orf_pattern = args.orf_pattern
 
     sequences = extract_sequences(assembly_path, flycode_pattern, orf_pattern)
     reference = extract_sequences(reference_path, flycode_pattern, orf_pattern)
 
-    aa_changes = get_aa_changes(sequences, reference)
-
-    write_flycode_db(aa_changes, output, experiment_name, orf_name)
+    variants = get_variants(sequences, reference)
+    variants.write_csv(f"{sample_id}_variants.csv")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--assembly_path", type=str, required=True)
     parser.add_argument("--reference_path", type=str, required=True)
-    parser.add_argument("--output", type=str, required=True)
-    parser.add_argument("--experiment_name", type=str, required=True)
+    parser.add_argument("--sample_id", type=str, required=True)
     parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
-    parser.add_argument("--orf_name", type=str, required=True)
     parser.add_argument("--orf_pattern", nargs=2, type=str, required=True)
 
     args = parser.parse_args()
