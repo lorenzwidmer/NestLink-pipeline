@@ -36,6 +36,5 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 | `extract_flycode_adapter` | String               | Linked adapter for flycode extraction.      |
 | `medaka_dorado_model`     | String               | Dorado model used for basecalling.          |
 | `flycode_pattern`         | List(String, String) | Sequences flanking flyodes.                 |
-| `orf_name`                | String               | Name of ORF.                                |
 | `orf_pattern`             | List(String, String) | Sequences flanking ORF.                     |
 | `outdir`                  | String               | Output directory for results.               |
