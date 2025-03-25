@@ -195,16 +195,15 @@ def main(args):
     reference_path = args.reference_path
     output = args.output
     flycode_pattern = args.flycode_pattern
-    orf1_name, orf1_pattern = args.orf1_name, args.orf1_pattern
-    orf2_name, orf2_pattern = args.orf2_name, args.orf2_pattern
+    orf_name, orf_pattern = args.orf_name, args.orf_pattern
     experiment_name = args.experiment_name
 
-    sequences = extract_sequences(assembly_path, flycode_pattern, orf1_pattern, orf2_pattern)
-    reference = extract_sequences(reference_path, flycode_pattern, orf1_pattern, orf2_pattern)
+    sequences = extract_sequences(assembly_path, flycode_pattern, orf_pattern)
+    reference = extract_sequences(reference_path, flycode_pattern, orf_pattern)
 
-    aa_changes = get_aa_changes(sequences, reference, orf2_name)
+    aa_changes = get_aa_changes(sequences, reference)
 
-    write_flycode_db(aa_changes, output, experiment_name, orf1_name, orf2_name)
+    write_flycode_db(aa_changes, output, experiment_name, orf_name)
 
 
 if __name__ == "__main__":
@@ -214,10 +213,8 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, required=True)
     parser.add_argument("--experiment_name", type=str, required=True)
     parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
-    parser.add_argument("--orf1_name", type=str, required=True)
-    parser.add_argument("--orf1_pattern", nargs=2, type=str, required=True)
-    parser.add_argument("--orf2_name", type=str, default=None)
-    parser.add_argument("--orf2_pattern", nargs=2, type=str, default=None)
+    parser.add_argument("--orf_name", type=str, required=True)
+    parser.add_argument("--orf_pattern", nargs=2, type=str, required=True)
 
     args = parser.parse_args()
     main(args)
