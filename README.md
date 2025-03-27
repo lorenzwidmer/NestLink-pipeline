@@ -59,7 +59,7 @@ ORDER by "position", variant_aa;
 -- Writing FASTA file
 COPY (
   SELECT
-    '>' || variant || chr(10) || flycodes,
+    '>' || coalesce(variant, 'wt') || chr(10) || flycodes,
   FROM variant_flycodes
 ) TO 'output.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
 ```
