@@ -12,16 +12,18 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 - Slurm workflow manager
 - Singularity
 
+## Running the pipeline locally
+1. Clone the repository.
+2. Edit the `params.json` file, specify the nanopore reads (bam) and reference sequence.
+3. Run the pipeline:
+`bash run_NL-pipeline.sh`
+
 ## Running the pipeline on the s3it cluster
 1. Clone the repository.
-2. Edit the params.json file, specify the nanopore reads (bam) and reference sequence.
-3. Run the pipeline:
+2. Edit the `singularity.cacheDir` option in the `nextflow.config` file.
+3. Edit the `params.json` file.
+4. Run the pipeline:
 `sbatch run_NL-pipeline.slurm`
-
-## Running the pipeline locally
-1. Prepare the pipeline as described above.
-2. Run the pipeline:
-`bash run_NL-pipeline.sh`
 
 ## Parameters
 | Parameter                 | Type                 | Description                                 |
@@ -38,3 +40,63 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 | `flycode_pattern`         | List(String, String) | Sequences flanking flyodes.                 |
 | `orf_pattern`             | List(String, String) | Sequences flanking ORF.                     |
 | `outdir`                  | String               | Output directory for results.               |
+
+## Generating FASTA file for MS peptide search
+Run the following SQL with [duckdb](https://duckdb.org/).
+### One ORF
+```SQL
+-- Grouping by variants and concatenating corresponding flycodes
+CREATE OR REPLACE VIEW variant_flycodes AS
+
+SELECT
+  reference_aa || "position" || variant_aa AS variant,
+  string_agg(flycode, '') AS flycodes
+FROM 'variants.csv'
+GROUP BY "position", reference_aa, variant_aa
+HAVING count(flycode) > 5
+ORDER by "position", variant_aa;
+
+-- Writing FASTA file
+COPY (
+  SELECT
+    '>' || variant || chr(10) || flycodes,
+  FROM variant_flycodes
+) TO 'output.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
+```
+### Two ORFs
+Run the pipeline twice with different `orf_pattern` parameters, then process the variant outputs.
+```SQL
+CREATE OR REPLACE VIEW variant_flycodes AS
+  
+WITH orf1_variants AS (
+  SELECT
+    cluster_id,
+    flycode,
+    string_agg(reference_aa || "position" || variant_aa) AS orf1
+  FROM 'orf1.csv'
+  WHERE variant_type == 'change' OR variant_type == 'wt'
+  GROUP BY cluster_id, flycode
+),
+
+orf2_variants AS (
+  SELECT
+    cluster_id,
+    string_agg(reference_aa || "position" || variant_aa) AS orf2
+  FROM 'orf2.csv'
+  WHERE variant_type == 'change' OR variant_type == 'wt'
+  GROUP BY cluster_id
+)
+
+SELECT
+  'TM287=' || coalesce(orf1, 'wt') || ';TM288=' || coalesce(orf2, 'wt') AS variant,
+  string_agg(flycode, '') AS flycodes
+FROM orf1_variants
+JOIN orf2_variants USING(cluster_id)
+GROUP by orf1, orf2;
+
+COPY (
+  SELECT
+    '>' || variant || chr(10) || flycodes,
+  FROM variant_flycodes
+) TO 'output.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
+```
