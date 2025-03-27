@@ -18,8 +18,7 @@ def extract_sequences(file_path, flycode, orf):
         orf (tuple): A (start_pattern, end_pattern) tuple for the ORF.
 
     Returns:
-        dict: Keys are cluster IDs; values are tuples of extracted sequences 
-              (flycode_seq, orf_seq) in-frame only.
+        dict: Keys are cluster IDs; values are tuples of extracted sequences (flycode_seq, orf_seq) in-frame only.
     """
     def is_in_frame(start_match, end_match):
         return (end_match.start() - start_match.end()) % 3 == 0
@@ -55,6 +54,7 @@ def extract_sequences(file_path, flycode, orf):
                 if orf_start_match and orf_end_match and is_in_frame(orf_start_match, orf_end_match):
                     orf_sequence = extract_subsequence(sequence, orf_start_match, orf_end_match)
                     sequences[cluster_id] = (flycode_sequence, orf_sequence)
+                    
     return sequences
 
 
@@ -80,7 +80,7 @@ def compare_aa_sequences(sequence, reference):
         reference (str): The reference amino acid sequence.
 
     Returns:
-        list: A list of amino acid changes, as tuples '<position>,<refAA>,<newAA>'.
+        list: A list of amino acid changes, as tuples (position, refAA, newAA).
     """
     changes = [
         (position, ref_base, seq_base)
