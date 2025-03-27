@@ -2,24 +2,23 @@
 import argparse
 import re
 import dnaio
+import polars as pl
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
 
 
-def extract_sequences(file_path, flycode, orf1, orf2=None):
+def extract_sequences(file_path, flycode, orf):
     """
-    Parse a FASTA file to extract flycode, ORF1, and optional ORF2 sequences.
+    Parse a FASTA file to extract flycode and ORF sequences.
 
     Args:
         file_path (str): Path to the FASTA file.
         flycode (tuple): A (start_pattern, end_pattern) tuple for the flycode.
-        orf1 (tuple): A (start_pattern, end_pattern) tuple for ORF1.
-        orf2 (tuple, optional): A (start_pattern, end_pattern) tuple for ORF2 (default: None).
+        orf (tuple): A (start_pattern, end_pattern) tuple for the ORF.
 
     Returns:
-        dict: Keys are cluster IDs; values are tuples of extracted sequences 
-              (flycode_seq, orf1_seq, [orf2_seq if provided]) in-frame only.
+        dict: Keys are cluster IDs; values are tuples of extracted sequences (flycode_seq, orf_seq) in-frame only.
     """
     def is_in_frame(start_match, end_match):
         return (end_match.start() - start_match.end()) % 3 == 0
@@ -32,12 +31,8 @@ def extract_sequences(file_path, flycode, orf1, orf2=None):
     fc_start = re.compile(flycode[0], re.IGNORECASE)
     fc_end = re.compile(flycode[1], re.IGNORECASE)
 
-    orf1_start = re.compile(orf1[0], re.IGNORECASE)
-    orf1_end = re.compile(orf1[1], re.IGNORECASE)
-
-    if orf2:
-        orf2_start = re.compile(orf2[0], re.IGNORECASE)
-        orf2_end = re.compile(orf2[1], re.IGNORECASE)
+    orf_start = re.compile(orf[0], re.IGNORECASE)
+    orf_end = re.compile(orf[1], re.IGNORECASE)
 
     with dnaio.open(file_path, mode="r") as reader:
         for record in reader:
@@ -48,27 +43,18 @@ def extract_sequences(file_path, flycode, orf1, orf2=None):
             fc_start_match = fc_start.search(sequence)
             fc_end_match = fc_end.search(sequence)
 
-            # Search for orf1
-            orf1_start_match = orf1_start.search(sequence)
-            orf1_end_match = orf1_end.search(sequence)
-
-            # Search for orf2
-            if orf2:
-                orf2_start_match = orf2_start.search(sequence)
-                orf2_end_match = orf2_end.search(sequence)
+            # Search for orf
+            orf_start_match = orf_start.search(sequence)
+            orf_end_match = orf_end.search(sequence)
 
             # Extract sequences if matches are found and in-frame
             if fc_start_match and fc_end_match and is_in_frame(fc_start_match, fc_end_match):
                 flycode_sequence = extract_subsequence(sequence, fc_start_match, fc_end_match)
 
-                if orf1_start_match and orf1_end_match and is_in_frame(orf1_start_match, orf1_end_match):
-                    orf1_sequence = extract_subsequence(sequence, orf1_start_match, orf1_end_match)
-
-                    if orf2 and orf2_start_match and orf2_end_match and is_in_frame(orf2_start_match, orf2_end_match):
-                        orf2_sequence = extract_subsequence(sequence, orf2_start_match, orf2_end_match)
-                        sequences[cluster_id] = (flycode_sequence, orf1_sequence, orf2_sequence)
-                    else:
-                        sequences[cluster_id] = (flycode_sequence, orf1_sequence)
+                if orf_start_match and orf_end_match and is_in_frame(orf_start_match, orf_end_match):
+                    orf_sequence = extract_subsequence(sequence, orf_start_match, orf_end_match)
+                    sequences[cluster_id] = (flycode_sequence, orf_sequence)
+                    
     return sequences
 
 
@@ -94,36 +80,29 @@ def compare_aa_sequences(sequence, reference):
         reference (str): The reference amino acid sequence.
 
     Returns:
-        list: A list of amino acid changes, in the format '<refAA><position><newAA>' or 'wt' if they are identical.
+        list: A list of amino acid changes, as tuples (position, refAA, newAA).
     """
-    changes = []
-
-    if len(sequence) == len(reference):
-
-        for position in range(len(reference)):
-            if sequence[position] != reference[position]:
-                change = f"{reference[position]}{position + 1}{sequence[position]}"
-                changes.append(change)
-
-        if reference == sequence:
-            changes.append("wt")
+    changes = [
+        (position, ref_base, seq_base)
+        for position, (ref_base, seq_base) in enumerate(zip(reference, sequence))
+        if ref_base != seq_base
+    ]
 
     return changes
 
 
-def get_aa_changes(sequences, reference, orf2=None):
+def get_variants(sequences, reference):
     """
-    Determine amino acid changes for each cluster ID relative to a the reference.
+    Determine amino acid changes for each consensus sequence relative to a the reference.
 
     Args:
-        sequences (dict): Dictionary mapping cluster IDs to extracted (flycode, ORF1, [ORF2]) sequences.
+        sequences (dict): Dictionary mapping cluster IDs to extracted (flycode, ORF) sequences.
         reference (dict): Dictionary containing exactly one reference entry of the same format.
-        orf2 (str): Name of the second ORF if present, otherwise None.
 
     Returns:
-        dict: Maps each cluster ID to a tuple of (flycode_aa, ORF1_changes, [ORF2_changes]).
+       pl.DataFrame: Contains cluster_ID, flycode, amino acid change position, reference amino acid, variant amino acid and variant type.
     """
-    aa_changes = {}
+    data = []
 
     # Getting reference sequences on a protein level
     if len(reference) != 1:
@@ -131,57 +110,32 @@ def get_aa_changes(sequences, reference, orf2=None):
             "The reference file does not contain exactly one record."
         )
     _, reference_sequence = next(iter(reference.items()))
-    reference_orf1_aa = translate(reference_sequence[1])
-    if orf2:
-        reference_orf2_aa = translate(reference_sequence[2])
+    reference_orf_aa = translate(reference_sequence[1])
 
     # Looping through all sequences
-    for cluster_id, values in sequences.items():
-        flycode_aa = translate(values[0])
-        orf1_aa = translate(values[1])
-        orf1_aa_changes = compare_aa_sequences(orf1_aa, reference_orf1_aa)
-        if orf2:
-            orf2_aa = translate(values[2])
-            orf2_aa_changes = compare_aa_sequences(orf2_aa, reference_orf2_aa)
-            aa_changes[cluster_id] = (flycode_aa, orf1_aa_changes, orf2_aa_changes)
-        else:
-            aa_changes[cluster_id] = (flycode_aa, orf1_aa_changes)
-    return aa_changes
+    for cluster_id, (flycode_nt, orf_nt) in sequences.items():
+        flycode_aa, orf_aa = translate(flycode_nt), translate(orf_nt)
 
+        if (len(orf_aa) != len(reference_orf_aa)):
+            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "indel"})
+            continue
 
-def write_flycode_db(aa_changes, output_path, prefix, orf1, orf2=None):
-    """
-    Write a flycode database in FASTA format, grouping identical variants.
+        if (orf_aa == reference_orf_aa):
+            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "wt"})
+            continue
 
-    Args:
-        aa_changes (dict): A dictionary of cluster IDs to (flycode_aa, ORF1_changes, [ORF2_changes]).
-        output_path (str): Path to the output FASTA file.
-        prefix (str): Prefix (e.g., experiment name) to include in FASTA headers.
-        orf1 (str): Name of ORF1.
-        orf2 (str, optional): Name of ORF2 if present, otherwise None.
-    """
-    variants = defaultdict(list)
+        if (orf_aa != reference_orf_aa):
+            orf_aa_changes = compare_aa_sequences(orf_aa, reference_orf_aa)
+            data.extend({
+                "cluster_id": cluster_id,
+                "flycode": flycode_aa,
+                "position": pos,
+                "reference_aa": ref_aa,
+                "variant_aa": var_aa,
+                "variant_type": "change"
+            } for pos, ref_aa, var_aa in orf_aa_changes)
 
-    for cluster_id, values in aa_changes.items():
-        flycode = values[0]
-        if orf2:
-            orf_changes = tuple(values[1]), tuple(values[2])   # both orfs
-        else:
-            orf_changes = tuple(values[1])  # only orf1
-        variants[orf_changes].append(flycode)
-
-    with open(output_path, "w") as file:
-        if orf2:
-            for variant, flycodes in variants.items():
-                variant_orf1 = ",".join(variant[0])
-                variant_orf2 = ",".join(variant[1])
-                file.write(f">{prefix}|{orf1}={variant_orf1};{orf2}={variant_orf2}\n")
-                file.write(f"{''.join(flycodes)}\n")
-        else:
-            for variant, flycodes in variants.items():
-                variant_orf1 = ",".join(variant)
-                file.write(f">{prefix}|{orf1}={variant_orf1}\n")
-                file.write(f"{''.join(flycodes)}\n")
+    return pl.DataFrame(data)
 
 
 def main(args):
@@ -193,31 +147,24 @@ def main(args):
     """
     assembly_path = args.assembly_path
     reference_path = args.reference_path
-    output = args.output
+    sample_id = args.sample_id
     flycode_pattern = args.flycode_pattern
-    orf1_name, orf1_pattern = args.orf1_name, args.orf1_pattern
-    orf2_name, orf2_pattern = args.orf2_name, args.orf2_pattern
-    experiment_name = args.experiment_name
+    orf_pattern = args.orf_pattern
 
-    sequences = extract_sequences(assembly_path, flycode_pattern, orf1_pattern, orf2_pattern)
-    reference = extract_sequences(reference_path, flycode_pattern, orf1_pattern, orf2_pattern)
+    sequences = extract_sequences(assembly_path, flycode_pattern, orf_pattern)
+    reference = extract_sequences(reference_path, flycode_pattern, orf_pattern)
 
-    aa_changes = get_aa_changes(sequences, reference, orf2_name)
-
-    write_flycode_db(aa_changes, output, experiment_name, orf1_name, orf2_name)
+    variants = get_variants(sequences, reference)
+    variants.write_csv(f"{sample_id}_variants.csv")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--assembly_path", type=str, required=True)
     parser.add_argument("--reference_path", type=str, required=True)
-    parser.add_argument("--output", type=str, required=True)
-    parser.add_argument("--experiment_name", type=str, required=True)
+    parser.add_argument("--sample_id", type=str, required=True)
     parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
-    parser.add_argument("--orf1_name", type=str, required=True)
-    parser.add_argument("--orf1_pattern", nargs=2, type=str, required=True)
-    parser.add_argument("--orf2_name", type=str, default=None)
-    parser.add_argument("--orf2_pattern", nargs=2, type=str, default=None)
+    parser.add_argument("--orf_pattern", nargs=2, type=str, required=True)
 
     args = parser.parse_args()
     main(args)

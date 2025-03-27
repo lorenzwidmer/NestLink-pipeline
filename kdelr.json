@@ -9,9 +9,7 @@
     "extract_seq_max_length": 1600,
     "extract_flycode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
     "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
-    "experiment_name": "KD20",
     "flycode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
-    "orf1_name": "KDELR",
-    "orf1_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
+    "orf_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
     "outdir": "results"
 }
