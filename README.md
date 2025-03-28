@@ -45,16 +45,23 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 Run the following SQL with [duckdb](https://duckdb.org/).
 ### One ORF
 ```SQL
--- Grouping by variants and concatenating corresponding flycodes
+-- Grouping by cluster, then variants and concatenating corresponding flycodes
 CREATE OR REPLACE VIEW variant_flycodes AS
 
+WITH variants AS (
+  SELECT
+    flycode,
+    string_agg(reference_aa || "position" || variant_aa ORDER BY position) AS orf
+  FROM 'barcode20_variants.csv'
+  WHERE variant_type == 'change' OR variant_type == 'wt'
+  GROUP BY cluster_id, flycode
+)
+
 SELECT
-  reference_aa || "position" || variant_aa AS variant,
+  '>' || coalesce(orf, 'wt') AS variant,
   string_agg(flycode, '') AS flycodes
-FROM 'variants.csv'
-GROUP BY "position", reference_aa, variant_aa
-HAVING count(flycode) > 5
-ORDER by "position", variant_aa;
+FROM variants
+GROUP BY ORF
 
 -- Writing FASTA file
 COPY (
@@ -88,7 +95,7 @@ orf2_variants AS (
 )
 
 SELECT
-  'TM287=' || coalesce(orf1, 'wt') || ';TM288=' || coalesce(orf2, 'wt') AS variant,
+  'ORF1=' || coalesce(orf1, 'wt') || ';ORF2=' || coalesce(orf2, 'wt') AS variant,
   string_agg(flycode, '') AS flycodes
 FROM orf1_variants
 JOIN orf2_variants USING(cluster_id)
