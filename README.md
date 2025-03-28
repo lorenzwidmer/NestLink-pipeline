@@ -52,7 +52,7 @@ WITH variants AS (
   SELECT
     flycode,
     string_agg(reference_aa || "position" || variant_aa ORDER BY position) AS orf
-  FROM 'barcode20_variants.csv'
+  FROM 'variants.csv'
   WHERE variant_type == 'change' OR variant_type == 'wt'
   GROUP BY cluster_id, flycode
 )
