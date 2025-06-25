@@ -54,7 +54,7 @@ def extract_sequences(file_path, flycode, orf):
                 if orf_start_match and orf_end_match and is_in_frame(orf_start_match, orf_end_match):
                     orf_sequence = extract_subsequence(sequence, orf_start_match, orf_end_match)
                     sequences[cluster_id] = (flycode_sequence, orf_sequence)
-                    
+
     return sequences
 
 
@@ -156,6 +156,13 @@ def main(args):
 
     variants = get_variants(sequences, reference)
     variants.write_csv(f"{sample_id}_variants.csv")
+
+    # writing the barcode map for enrich2
+    barcode_map = [
+        {"barcode": flycode, "orf": orf}
+        for _, (flycode, orf) in sequences.items()
+    ]
+    pl.DataFrame(barcode_map).write_csv(f"{sample_id}_barcodemap.txt", include_header=False, separator="\t")
 
 
 if __name__ == "__main__":

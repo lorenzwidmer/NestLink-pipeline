@@ -13,6 +13,7 @@ process VARIANT_CALLING {
 
     output:
     path "${sample_id}_variants.csv", emit: variants_db
+    path "${sample_id}_barcodemap.txt", emit: enrich2_barcodemap
 
     script:
     """
