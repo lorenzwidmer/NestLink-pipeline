@@ -51,24 +51,25 @@ CREATE OR REPLACE VIEW variant_flycodes AS
 WITH variants AS (
   SELECT
     flycode,
-    string_agg(reference_aa || "position" || variant_aa ORDER BY position) AS orf
+    string_agg(reference_aa || "position" || variant_aa ORDER BY position) AS aa_change
   FROM 'variants.csv'
-  WHERE variant_type == 'change' OR variant_type == 'wt'
+  WHERE variant_type == 'change'
   GROUP BY cluster_id, flycode
+  HAVING count(position) = 1 -- single amino acid changes only
 )
 
 SELECT
-  '>' || coalesce(orf, 'wt') AS variant,
+  aa_change,
   string_agg(flycode, '') AS flycodes
 FROM variants
-GROUP BY ORF
+GROUP BY aa_change;
 
 -- Writing FASTA file
 COPY (
   SELECT
-    '>' || coalesce(variant, 'wt') || chr(10) || flycodes,
+    '>' || aa_change || chr(10) || flycodes,
   FROM variant_flycodes
-) TO 'output.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
+) TO 'flyocde_db.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
 ```
 ### Two ORFs
 Run the pipeline twice with different `orf_pattern` parameters, then process the variant outputs.
