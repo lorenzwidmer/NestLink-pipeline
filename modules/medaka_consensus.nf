@@ -1,5 +1,4 @@
 process MEDAKA_CONSENSUS {
-    container 'ontresearch/medaka:sha447c70a639b8bcf17dc49b51e74dfcde6474837b'
     cpus 8
     memory '16 GB'
     time '60m'
@@ -13,10 +12,12 @@ process MEDAKA_CONSENSUS {
 
     output:
     tuple val(sample_id), path("${sample_id}_assembly.fasta"), emit: consensus
-    tuple path("medaka_interference.log"), path("medaka_sequence.log"), emit: log
+    tuple path("medaka_version.log"), path("medaka_interference.log"), path("medaka_sequence.log"), emit: log
 
     script:
     """
+    medaka --version > medaka_version.log
+
     medaka inference \
         --batch 200 --threads 2 \
         --model r1041_e82_400bps_sup_v5.0.0  \
