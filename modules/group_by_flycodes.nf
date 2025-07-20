@@ -8,8 +8,7 @@ process GROUP_BY_FLYCODES {
     publishDir params.outdir, mode: 'copy', pattern: '*.csv'
 
     input:
-    tuple val(sample_id), path(flycodes), path(sequences)
-    path(reference)
+    tuple val(sample_id), path(flycodes), path(sequences), path(reference)
 
     output:
     tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads

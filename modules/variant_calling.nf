@@ -8,12 +8,11 @@ process VARIANT_CALLING {
     publishDir params.outdir, mode: 'copy'
 
     input:
-    tuple val(sample_id), path(assembly)
-    path(reference)
+    tuple val(sample_id), path(assembly), path(reference)
 
     output:
     path "${sample_id}_variants.csv", emit: variants_db
-    path "${sample_id}_barcodemap.txt", emit: enrich2_barcodemap
+    path "${sample_id}_barcodemap.txt.gz", emit: enrich2_barcodemap
 
     script:
     """
@@ -23,5 +22,7 @@ process VARIANT_CALLING {
         --sample_id ${sample_id} \
         --flycode_pattern ${params.flycode_pattern.join(' ')} \
         --orf_pattern ${params.orf_pattern.join(' ')}
+
+    gzip ${sample_id}_barcodemap.txt
     """
 }

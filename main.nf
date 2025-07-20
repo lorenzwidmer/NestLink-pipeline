@@ -22,10 +22,10 @@ workflow nestlink {
     EXTRACT_SEQUENCES(FILTER_READS.out.reads)
     EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
     flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
-    GROUP_BY_FLYCODES(flycodes_sequences_ch, reference_ch)
+    GROUP_BY_FLYCODES(flycodes_sequences_ch.combine(reference_ch))
     ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
     MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
-    VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus, reference_ch)
+    VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus.combine(reference_ch))
 }
 
 workflow {
