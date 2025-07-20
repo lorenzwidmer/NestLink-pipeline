@@ -20,8 +20,8 @@ process MEDAKA_CONSENSUS {
 
     medaka inference \
         --batch 200 --threads 2 \
-        --model r1041_e82_400bps_sup_v5.0.0  \
-        merged.sorted.bam results.contigs.hdf \
+        --model ${params.medaka_dorado_model}  \
+        ${bam} results.contigs.hdf \
         2> medaka_interference.log
 
     medaka sequence \
