@@ -32,9 +32,6 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 | `reference`               | String               | Path to reference FASTA file.               |
 | `filter_min_length`       | Integer              | Read filtering minimum length threshold.    |
 | `filter_max_length`       | Integer              | Read filtering maximum length threshold.    |
-| `extract_seq_adapter`     | String               | Linked adapter for sequence trimming.       |
-| `extract_seq_min_length`  | Integer              | Sequence trimming minimum length threshold. |
-| `extract_seq_max_length`  | Integer              | Sequence trimming minimum length threshold. |
 | `extract_flycode_adapter` | String               | Linked adapter for flycode extraction.      |
 | `medaka_dorado_model`     | String               | Dorado model used for basecalling.          |
 | `flycode_pattern`         | List(String, String) | Sequences flanking flyodes.                 |
