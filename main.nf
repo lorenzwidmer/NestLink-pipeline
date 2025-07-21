@@ -3,7 +3,6 @@
 /* Modules */
 include { BAM_TO_FASTQ      } from './modules/bam_to_fastq.nf'
 include { FILTER_READS      } from './modules/filter_reads.nf'
-include { EXTRACT_SEQUENCES } from './modules/extract_sequences.nf'
 include { EXTRACT_FLYCODES  } from './modules/extract_flycodes.nf'
 include { GROUP_BY_FLYCODES } from './modules/group_by_flycodes.nf'
 include { ALIGN_SEQUENCES   } from './modules/align_sequences.nf'
@@ -19,9 +18,8 @@ workflow nestlink {
     main:
     BAM_TO_FASTQ(basecalled_ch)
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
-    EXTRACT_SEQUENCES(FILTER_READS.out.reads)
-    EXTRACT_FLYCODES(EXTRACT_SEQUENCES.out.sequences)
-    flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(EXTRACT_SEQUENCES.out.sequences)
+    EXTRACT_FLYCODES(FILTER_READS.out.reads)
+    flycodes_sequences_ch = EXTRACT_FLYCODES.out.flycodes.join(FILTER_READS.out.reads)
     GROUP_BY_FLYCODES(flycodes_sequences_ch.combine(reference_ch))
     ALIGN_SEQUENCES(GROUP_BY_FLYCODES.out.grouped_reads)
     MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
