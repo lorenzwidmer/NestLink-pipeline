@@ -5,7 +5,7 @@
     "filter_min_length": 1600,
     "filter_max_length": 1900,
     "extract_flycode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
-    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
+    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.2.0",
     "flycode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
     "orf_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
     "outdir": "results"
