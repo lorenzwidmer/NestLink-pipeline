@@ -2,7 +2,7 @@ process ALIGN_SEQUENCES {
     cpus 8
     memory '4 GB'
     time '60m'
-    conda "bioconda::minimap2=2.28 bioconda::samtools=1.21"
+    conda "bioconda::minimap2=2.30 bioconda::samtools=1.22.1"
     tag "${sample_id}"
 
     input:
