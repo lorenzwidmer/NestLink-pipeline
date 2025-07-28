@@ -2,6 +2,7 @@
     "data": "data/barcode20.bam",
     "reference": "data/KDELR-GFP_FC_new.fasta",
     "reference_flycode": "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGCtgcgg",
+    "filter_quality": 96.84,
     "filter_min_length": 1600,
     "filter_max_length": 1900,
     "extract_flycode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",

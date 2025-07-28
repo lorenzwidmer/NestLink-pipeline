@@ -2,6 +2,7 @@
     "data": "data/MsbA_bc01_025.bam",
     "reference": "data/id-v-18-pdms3_msbA_BC.fasta",
     "reference_flycode": "NNNWSNNNWSNNNWSNNNWSNNNWSNNNWSNNN",
+    "filter_quality": 96.84,
     "filter_min_length": 7200,
     "filter_max_length": 7500,
     "extract_flycode_adapter": "TCAGGAtccgtcttc...CAATATATTAAATTA",
