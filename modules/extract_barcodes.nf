@@ -1,4 +1,4 @@
-process EXTRACT_FLYCODES {
+process EXTRACT_BARCODES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -9,7 +9,7 @@ process EXTRACT_FLYCODES {
     tuple val(sample_id), path(fastq_gz)
 
     output:
-    tuple val(sample_id), path("${sample_id}_flycodes.fasta"), emit: flycodes
+    tuple val(sample_id), path("${sample_id}_flycodes.fasta"), emit: barcodes
 
     script:
     """
