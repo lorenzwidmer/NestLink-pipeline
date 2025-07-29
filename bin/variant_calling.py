@@ -91,13 +91,14 @@ def compare_aa_sequences(sequence, reference):
     return changes
 
 
-def get_variants(sequences, reference):
+def get_variants(sequences, reference, translate_barcode):
     """
     Determine amino acid changes for each consensus sequence relative to a the reference.
 
     Args:
         sequences (dict): Dictionary mapping cluster IDs to extracted (flycode, ORF) sequences.
         reference (dict): Dictionary containing exactly one reference entry of the same format.
+        translate_barcode (bool): Translate DNA barcodes, used for flycodes.
 
     Returns:
        pl.DataFrame: Contains cluster_ID, flycode, amino acid change position, reference amino acid, variant amino acid and variant type.
@@ -114,21 +115,26 @@ def get_variants(sequences, reference):
 
     # Looping through all sequences
     for cluster_id, (flycode_nt, orf_nt) in sequences.items():
-        flycode_aa, orf_aa = translate(flycode_nt), translate(orf_nt)
+        if (translate_barcode):
+            flycode = translate(flycode_nt)
+        else:
+            flycode = flycode_nt
+
+        orf_aa = translate(orf_nt)
 
         if (len(orf_aa) != len(reference_orf_aa)):
-            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "indel"})
+            data.append({"cluster_id": cluster_id, "flycode": flycode, "variant_type": "indel"})
             continue
 
         if (orf_aa == reference_orf_aa):
-            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "wt"})
+            data.append({"cluster_id": cluster_id, "flycode": flycode, "variant_type": "wt"})
             continue
 
         if (orf_aa != reference_orf_aa):
             orf_aa_changes = compare_aa_sequences(orf_aa, reference_orf_aa)
             data.extend({
                 "cluster_id": cluster_id,
-                "flycode": flycode_aa,
+                "flycode": flycode,
                 "position": pos,
                 "reference_aa": ref_aa,
                 "variant_aa": var_aa,
@@ -150,11 +156,12 @@ def main(args):
     sample_id = args.sample_id
     flycode_pattern = args.flycode_pattern
     orf_pattern = args.orf_pattern
+    translate_barcode = args.translate_barcode
 
     sequences = extract_sequences(assembly_path, flycode_pattern, orf_pattern)
     reference = extract_sequences(reference_path, flycode_pattern, orf_pattern)
 
-    variants = get_variants(sequences, reference)
+    variants = get_variants(sequences, reference, translate_barcode)
     variants.write_csv(f"{sample_id}_variants.csv")
 
     # writing the barcode map for enrich2
@@ -172,6 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--sample_id", type=str, required=True)
     parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
     parser.add_argument("--orf_pattern", nargs=2, type=str, required=True)
+    parser.add_argument("--translate_barcode", action='store_true')
 
     args = parser.parse_args()
     main(args)
