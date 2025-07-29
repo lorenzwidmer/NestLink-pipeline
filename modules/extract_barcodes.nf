@@ -9,38 +9,38 @@ process EXTRACT_BARCODES {
     tuple val(sample_id), path(fastq_gz)
 
     output:
-    tuple val(sample_id), path("${sample_id}_flycodes.fasta"), emit: barcodes
+    tuple val(sample_id), path("${sample_id}_barcodes.fasta"), emit: barcodes
 
     script:
     """
-    extract_flycode_adapter_rc=\$(echo '${params.extract_flycode_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
+    extract_barcode_adapter_rc=\$(echo '${params.extract_barcode_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
 
     cutadapt \
         -j $task.cpus \
-        -g $params.extract_flycode_adapter \
+        -g $params.extract_barcode_adapter \
         --error-rate 0.1 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
-        --fasta ${fastq_gz} > ${sample_id}_flycodes_fwd.fasta
+        --fasta ${fastq_gz} > ${sample_id}_barcodes_fwd.fasta
 
     cutadapt \
         -j $task.cpus \
-        -g \$extract_flycode_adapter_rc \
+        -g \$extract_barcode_adapter_rc \
         --error-rate 0.1 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
-        --fasta ${fastq_gz} > ${sample_id}_flycodes_rc.fasta
+        --fasta ${fastq_gz} > ${sample_id}_barcodes_rc.fasta
 
     seqkit seq \
         --threads $task.cpus \
         --seq-type dna \
-        --reverse --complement ${sample_id}_flycodes_rc.fasta \
-        --out-file ${sample_id}_flycodes_rev.fasta
+        --reverse --complement ${sample_id}_barcodes_rc.fasta \
+        --out-file ${sample_id}_barcodes_rev.fasta
 
-    cat ${sample_id}_flycodes_fwd.fasta ${sample_id}_flycodes_rev.fasta > ${sample_id}_flycodes_concat.fasta
+    cat ${sample_id}_barcodes_fwd.fasta ${sample_id}_barcodes_rev.fasta > ${sample_id}_barcodes_concat.fasta
 
     seqkit rmdup \
-        --by-name ${sample_id}_flycodes_concat.fasta \
-        --out-file ${sample_id}_flycodes.fasta
+        --by-name ${sample_id}_barcodes_concat.fasta \
+        --out-file ${sample_id}_barcodes.fasta
     """
 }

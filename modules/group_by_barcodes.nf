@@ -16,12 +16,12 @@ process GROUP_BY_BARCODES {
 
     script:
     """
-    group_by_flycodes.py \
+    group_by_barcodes.py \
         --sample_id ${sample_id} \
-        --flycodes ${barcodes} \
+        --barcodes ${barcodes} \
         --sequence ${sequences} \
         --reference_seq ${reference} \
-        --reference_flycode ${params.reference_flycode} \
+        --reference_barcode ${params.reference_barcode} \
         --barcode_regex "${params.barcode_regex}"
     """
 }
