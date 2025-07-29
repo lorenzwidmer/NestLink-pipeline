@@ -173,7 +173,7 @@ def write_references(clusters_df, reference_seq, reference_flycode):
             writer.write(record)
 
 
-def main(sample_id, flycodes, sequences, reference_seq, reference_flycode):
+def main(sample_id, flycodes, sequences, reference_seq, reference_flycode, barcode_regex):
     """
     Main function to validate and cluster flycodes, bin reads based on theses clusters and write them to disk.
 
@@ -183,14 +183,14 @@ def main(sample_id, flycodes, sequences, reference_seq, reference_flycode):
         sequences (str): Path to the FASTQ.GZ file with original read sequences.
         reference_seq (str): Path to the reference sequence FASTA file.
         reference_flycode (str): Flycode sequence used in the reference sequence.
+        barcode_regex (srt): Regex that matches the used barcode.
     """
     # Reading in the flycodes.
     flycodes_df = flycodes_to_dataframe(flycodes)
 
     # Add a new column with True/False indicating a valid flycode.
-    valid_flycode = r"^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$"
     flycodes_df = flycodes_df.with_columns(
-        pl.col("flycode").str.contains(valid_flycode).alias("is_valid_flycode")
+        pl.col("flycode").str.contains(barcode_regex).alias("is_valid_flycode")
     )
     flycodes_df.write_csv(f"{sample_id}_reads.csv")
 
@@ -274,5 +274,6 @@ if __name__ == "__main__":
     parser.add_argument("--sequences", type=str)
     parser.add_argument("--reference_seq", type=str)
     parser.add_argument("--reference_flycode", type=str)
+    parser.add_argument("--barcode_regex", type=str)
     args = parser.parse_args()
-    main(args.sample_id, args.flycodes, args.sequences, args.reference_seq, args.reference_flycode)
+    main(args.sample_id, args.flycodes, args.sequences, args.reference_seq, args.reference_flycode, args.barcode_regex)

@@ -21,6 +21,7 @@ process GROUP_BY_FLYCODES {
         --flycodes ${flycodes} \
         --sequence ${sequences} \
         --reference_seq ${reference} \
-        --reference_flycode ${params.reference_flycode}
+        --reference_flycode ${params.reference_flycode} \
+        --barcode_regex "${params.barcode_regex}"
     """
 }
