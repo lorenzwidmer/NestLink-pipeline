@@ -1,5 +1,8 @@
 # NestLink-pipeline
-NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.nature.com/articles/s41592-019-0389-8) sequenced by nanopore sequencing. Reads are binned according to their flycodes (UMIs). Accurate consensus sequences are calculated using Medaka. Variants are called with the pipeline, resulting in a flycode assignment table that links protein variants to their respective set of flycodes.
+NestLink-pipeline is a pipeline for processing barcoded protein variant libraries and [NestLink libraries](https://www.nature.com/articles/s41592-019-0389-8) sequenced by nanopore sequencing.
+Reads are binned according to their barcodes or flycodes (UMIs).
+Accurate consensus sequences are calculated using Medaka.
+Finally, variants are called with the pipeline, linking barcodes or flycodes with their respective protein variants.
 
 ## Requirements
 ### Local and cluster execution
@@ -10,98 +13,25 @@ NestLink-pipeline is a pipeline for processing [NestLink libraries](https://www.
 - Podman ([https://podman.io/](https://podman.io/))
 ### Cluster execution only
 - Slurm workflow manager
-- Singularity
 
-## Running the pipeline locally
-1. Clone the repository.
-2. Edit the `params.json` file, specify the nanopore reads (bam) and reference sequence.
-3. Run the pipeline:
-`bash run_NL-pipeline.sh`
-
-## Running the pipeline on the s3it cluster
-1. Clone the repository.
-2. Edit the `singularity.cacheDir` option in the `nextflow.config` file.
-3. Edit the `params.json` file.
-4. Run the pipeline:
-`sbatch run_NL-pipeline.slurm`
+## Running the pipeline
+1. Clone the repository with `git clone https://github.com/fabianackle/NestLink-pipeline.git`.
+2. Create a `params.json` file with the parameters listed below, specify the nanopore reads (bam) and reference sequence, see the examples contained in this repo.
+3. Run the pipeline with either `./run_NL-pipeline.sh` for local execution or on a cluster with `sbatch run_NL-pipeline.slurm`.
 
 ## Parameters
 | Parameter                 | Type                 | Description                                 |
 |---------------------------|----------------------|---------------------------------------------|
 | `data`                    | String               | Path to input BAM file.                     |
 | `reference`               | String               | Path to reference FASTA file.               |
+| `reference_barcode`       | String               | Barcode sequence used in reference.         |
+| `filter_quality`          | Float                | Minimum mean read quality threshold.        |
 | `filter_min_length`       | Integer              | Read filtering minimum length threshold.    |
 | `filter_max_length`       | Integer              | Read filtering maximum length threshold.    |
-| `extract_flycode_adapter` | String               | Linked adapter for flycode extraction.      |
+| `extract_barcode_adapter` | String               | Linked adapter for barcode extraction.      |
+| `barcode_regex`           | String               | Regular expression matching the barcode.    |
 | `medaka_dorado_model`     | String               | Dorado model used for basecalling.          |
-| `flycode_pattern`         | List(String, String) | Sequences flanking flyodes.                 |
+| `barcode_pattern`         | List(String, String) | Sequences flanking the barcode.             |
 | `orf_pattern`             | List(String, String) | Sequences flanking ORF.                     |
+| `translate_barcode`       | Boolean              | Translates barcode, used with flycodes.     |
 | `outdir`                  | String               | Output directory for results.               |
-
-## Generating FASTA file for MS peptide search
-Run the following SQL with [duckdb](https://duckdb.org/).
-### One ORF
-```SQL
--- Grouping by cluster, then variants and concatenating corresponding flycodes
-CREATE OR REPLACE VIEW variant_flycodes AS
-
-WITH variants AS (
-  SELECT
-    flycode,
-    string_agg(reference_aa || "position" || variant_aa ORDER BY position) AS aa_change
-  FROM 'variants.csv'
-  WHERE variant_type == 'change'
-  GROUP BY cluster_id, flycode
-  HAVING count(position) = 1 -- single amino acid changes only
-)
-
-SELECT
-  aa_change,
-  string_agg(flycode, '') AS flycodes
-FROM variants
-GROUP BY aa_change;
-
--- Writing FASTA file
-COPY (
-  SELECT
-    '>' || aa_change || chr(10) || flycodes,
-  FROM variant_flycodes
-) TO 'flyocde_db.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
-```
-### Two ORFs
-Run the pipeline twice with different `orf_pattern` parameters, then process the variant outputs.
-```SQL
-CREATE OR REPLACE VIEW variant_flycodes AS
-  
-WITH orf1_variants AS (
-  SELECT
-    cluster_id,
-    flycode,
-    string_agg(reference_aa || "position" || variant_aa) AS orf1
-  FROM 'orf1.csv'
-  WHERE variant_type == 'change' OR variant_type == 'wt'
-  GROUP BY cluster_id, flycode
-),
-
-orf2_variants AS (
-  SELECT
-    cluster_id,
-    string_agg(reference_aa || "position" || variant_aa) AS orf2
-  FROM 'orf2.csv'
-  WHERE variant_type == 'change' OR variant_type == 'wt'
-  GROUP BY cluster_id
-)
-
-SELECT
-  'ORF1=' || coalesce(orf1, 'wt') || ';ORF2=' || coalesce(orf2, 'wt') AS variant,
-  string_agg(flycode, '') AS flycodes
-FROM orf1_variants
-JOIN orf2_variants USING(cluster_id)
-GROUP by orf1, orf2;
-
-COPY (
-  SELECT
-    '>' || variant || chr(10) || flycodes,
-  FROM variant_flycodes
-) TO 'output.fasta' (HEADER FALSE, DELIMITER '', QUOTE '');
-```
