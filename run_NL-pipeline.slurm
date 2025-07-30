@@ -6,7 +6,6 @@
 ##SBATCH --mail-user=user@example.com
 ##SBATCH --mail-type=BEGIN,END 
 
-module load singularityce
 module load mamba
 eval "$(conda shell.bash hook)"
 conda activate nextflow
