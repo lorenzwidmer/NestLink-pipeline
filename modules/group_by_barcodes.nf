@@ -1,4 +1,4 @@
-process GROUP_BY_FLYCODES {
+process GROUP_BY_BARCODES {
     cpus 8
     memory '4 GB'
     time '60m'
@@ -8,7 +8,7 @@ process GROUP_BY_FLYCODES {
     publishDir params.outdir, mode: 'copy', pattern: '*.csv'
 
     input:
-    tuple val(sample_id), path(flycodes), path(sequences), path(reference)
+    tuple val(sample_id), path(barcodes), path(sequences), path(reference)
 
     output:
     tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit:grouped_reads
@@ -16,11 +16,12 @@ process GROUP_BY_FLYCODES {
 
     script:
     """
-    group_by_flycodes.py \
+    group_by_barcodes.py \
         --sample_id ${sample_id} \
-        --flycodes ${flycodes} \
+        --barcodes ${barcodes} \
         --sequence ${sequences} \
         --reference_seq ${reference} \
-        --reference_flycode ${params.reference_flycode}
+        --reference_barcode ${params.reference_barcode} \
+        --barcode_regex "${params.barcode_regex}"
     """
 }

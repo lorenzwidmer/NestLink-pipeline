@@ -1,12 +1,15 @@
 {
     "data": "data/barcode20.bam",
     "reference": "data/KDELR-GFP_FC_new.fasta",
-    "reference_flycode": "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGCtgcgg",
+    "reference_barcode": "GGTAGTNNNNNNNNNNNNNNNNNNNNNTGGCtgcgg",
+    "filter_quality": 96.84,
     "filter_min_length": 1600,
     "filter_max_length": 1900,
-    "extract_flycode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
+    "extract_barcode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
+    "barcode_regex": "^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$",
     "medaka_dorado_model": "r1041_e82_400bps_sup_v5.2.0",
-    "flycode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
+    "barcode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
     "orf_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
+    "translate_barcode": true,
     "outdir": "results"
 }

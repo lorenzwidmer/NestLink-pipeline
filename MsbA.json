@@ -1,0 +1,15 @@
+{
+    "data": "data/MsbA_bc01_025.bam",
+    "reference": "data/id-v-18-pdms3_msbA_BC.fasta",
+    "reference_barcode": "NNNWSNNNWSNNNWSNNNWSNNNWSNNNWSNNN",
+    "filter_quality": 96.84,
+    "filter_min_length": 7200,
+    "filter_max_length": 7500,
+    "extract_barcode_adapter": "TCAGGAtccgtcttc...CAATATATTAAATTA",
+    "barcode_regex": "^([ATGC]{3}[AT][GC]){6}[ATGC]{3}$",
+    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.2.0",
+    "barcode_pattern": ["Atccgtcttc", "CAATATATTA"],
+    "orf_pattern": ["agtATGCAT", "GGtcgtGCAT"],
+    "translate_barcode": false,
+    "outdir": "results"
+}

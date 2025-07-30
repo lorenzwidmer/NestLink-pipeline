@@ -8,17 +8,17 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 
-def extract_sequences(file_path, flycode, orf):
+def extract_sequences(file_path, barcode, orf):
     """
-    Parse a FASTA file to extract flycode and ORF sequences.
+    Parse a FASTA file to extract barcode and ORF sequences.
 
     Args:
         file_path (str): Path to the FASTA file.
-        flycode (tuple): A (start_pattern, end_pattern) tuple for the flycode.
+        barcode (tuple): A (start_pattern, end_pattern) tuple for the barcode.
         orf (tuple): A (start_pattern, end_pattern) tuple for the ORF.
 
     Returns:
-        dict: Keys are cluster IDs; values are tuples of extracted sequences (flycode_seq, orf_seq) in-frame only.
+        dict: Keys are cluster IDs; values are tuples of extracted sequences (barcode_seq, orf_seq) in-frame only.
     """
     def is_in_frame(start_match, end_match):
         return (end_match.start() - start_match.end()) % 3 == 0
@@ -28,8 +28,8 @@ def extract_sequences(file_path, flycode, orf):
 
     sequences = {}
 
-    fc_start = re.compile(flycode[0], re.IGNORECASE)
-    fc_end = re.compile(flycode[1], re.IGNORECASE)
+    fc_start = re.compile(barcode[0], re.IGNORECASE)
+    fc_end = re.compile(barcode[1], re.IGNORECASE)
 
     orf_start = re.compile(orf[0], re.IGNORECASE)
     orf_end = re.compile(orf[1], re.IGNORECASE)
@@ -39,7 +39,7 @@ def extract_sequences(file_path, flycode, orf):
             cluster_id = record.name
             sequence = record.sequence
 
-            # Search for flycodes
+            # Search for barcodes
             fc_start_match = fc_start.search(sequence)
             fc_end_match = fc_end.search(sequence)
 
@@ -49,11 +49,11 @@ def extract_sequences(file_path, flycode, orf):
 
             # Extract sequences if matches are found and in-frame
             if fc_start_match and fc_end_match and is_in_frame(fc_start_match, fc_end_match):
-                flycode_sequence = extract_subsequence(sequence, fc_start_match, fc_end_match)
+                barcode_sequence = extract_subsequence(sequence, fc_start_match, fc_end_match)
 
                 if orf_start_match and orf_end_match and is_in_frame(orf_start_match, orf_end_match):
                     orf_sequence = extract_subsequence(sequence, orf_start_match, orf_end_match)
-                    sequences[cluster_id] = (flycode_sequence, orf_sequence)
+                    sequences[cluster_id] = (barcode_sequence, orf_sequence)
 
     return sequences
 
@@ -91,16 +91,17 @@ def compare_aa_sequences(sequence, reference):
     return changes
 
 
-def get_variants(sequences, reference):
+def get_variants(sequences, reference, translate_barcode):
     """
     Determine amino acid changes for each consensus sequence relative to a the reference.
 
     Args:
-        sequences (dict): Dictionary mapping cluster IDs to extracted (flycode, ORF) sequences.
+        sequences (dict): Dictionary mapping cluster IDs to extracted (barcode, ORF) sequences.
         reference (dict): Dictionary containing exactly one reference entry of the same format.
+        translate_barcode (bool): Translate DNA barcodes, used for barcodes.
 
     Returns:
-       pl.DataFrame: Contains cluster_ID, flycode, amino acid change position, reference amino acid, variant amino acid and variant type.
+       pl.DataFrame: Contains cluster_ID, barcode, amino acid change position, reference amino acid, variant amino acid and variant type.
     """
     data = []
 
@@ -113,22 +114,27 @@ def get_variants(sequences, reference):
     reference_orf_aa = translate(reference_sequence[1])
 
     # Looping through all sequences
-    for cluster_id, (flycode_nt, orf_nt) in sequences.items():
-        flycode_aa, orf_aa = translate(flycode_nt), translate(orf_nt)
+    for cluster_id, (barcode_nt, orf_nt) in sequences.items():
+        if (translate_barcode):
+            barcode = translate(barcode_nt)
+        else:
+            barcode = barcode_nt
+
+        orf_aa = translate(orf_nt)
 
         if (len(orf_aa) != len(reference_orf_aa)):
-            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "indel"})
+            data.append({"cluster_id": cluster_id, "barcode": barcode, "variant_type": "indel"})
             continue
 
         if (orf_aa == reference_orf_aa):
-            data.append({"cluster_id": cluster_id, "flycode": flycode_aa, "variant_type": "wt"})
+            data.append({"cluster_id": cluster_id, "barcode": barcode, "variant_type": "wt"})
             continue
 
         if (orf_aa != reference_orf_aa):
             orf_aa_changes = compare_aa_sequences(orf_aa, reference_orf_aa)
             data.extend({
                 "cluster_id": cluster_id,
-                "flycode": flycode_aa,
+                "barcode": barcode,
                 "position": pos,
                 "reference_aa": ref_aa,
                 "variant_aa": var_aa,
@@ -140,7 +146,7 @@ def get_variants(sequences, reference):
 
 def main(args):
     """
-    Coordinate the extraction, translation, variant calling, and database writing of flycodes.
+    Coordinate the extraction, translation, variant calling, and database writing of barcodes.
 
     Args:
         args (Namespace): Parsed command-line arguments.
@@ -148,19 +154,20 @@ def main(args):
     assembly_path = args.assembly_path
     reference_path = args.reference_path
     sample_id = args.sample_id
-    flycode_pattern = args.flycode_pattern
+    barcode_pattern = args.barcode_pattern
     orf_pattern = args.orf_pattern
+    translate_barcode = args.translate_barcode
 
-    sequences = extract_sequences(assembly_path, flycode_pattern, orf_pattern)
-    reference = extract_sequences(reference_path, flycode_pattern, orf_pattern)
+    sequences = extract_sequences(assembly_path, barcode_pattern, orf_pattern)
+    reference = extract_sequences(reference_path, barcode_pattern, orf_pattern)
 
-    variants = get_variants(sequences, reference)
+    variants = get_variants(sequences, reference, translate_barcode)
     variants.write_csv(f"{sample_id}_variants.csv")
 
     # writing the barcode map for enrich2
     barcode_map = [
-        {"barcode": flycode, "orf": orf}
-        for _, (flycode, orf) in sequences.items()
+        {"barcode": barcode, "orf": orf}
+        for _, (barcode, orf) in sequences.items()
     ]
     pl.DataFrame(barcode_map).write_csv(f"{sample_id}_barcodemap.txt", include_header=False, separator="\t")
 
@@ -170,8 +177,9 @@ if __name__ == "__main__":
     parser.add_argument("--assembly_path", type=str, required=True)
     parser.add_argument("--reference_path", type=str, required=True)
     parser.add_argument("--sample_id", type=str, required=True)
-    parser.add_argument("--flycode_pattern", nargs=2, type=str, required=True)
+    parser.add_argument("--barcode_pattern", nargs=2, type=str, required=True)
     parser.add_argument("--orf_pattern", nargs=2, type=str, required=True)
+    parser.add_argument("--translate_barcode", action='store_true')
 
     args = parser.parse_args()
     main(args)

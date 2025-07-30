@@ -14,7 +14,7 @@ process FILTER_READS {
     script:
     """
     filtlong \
-        --min_mean_q 96.84 \
+        --min_mean_q $params.filter_quality \
         --min_length $params.filter_min_length \
         --max_length $params.filter_max_length \
         ${reads} \
