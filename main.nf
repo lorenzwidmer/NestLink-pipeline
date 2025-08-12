@@ -10,6 +10,22 @@ include { MEDAKA_CONSENSUS  } from './modules/medaka_consensus.nf'
 include { VARIANT_CALLING   } from './modules/variant_calling.nf'
 
 /* Workflows */
+workflow {
+    log.info(
+        """
+        ┌─────────────────────────────────────────────┐
+        │ O N T   C O N S E N S U S   P I P E L I N E │
+        │ by Fabian Ackle                             │  
+        └─────────────────────────────────────────────┘
+        """.stripIndent()
+    )
+
+    basecalled_ch = Channel.fromPath(params.data)
+    reference_ch = Channel.fromPath(params.reference)
+
+    consensus(basecalled_ch, reference_ch)
+}
+
 workflow consensus {
     take:
     basecalled_ch
@@ -24,19 +40,4 @@ workflow consensus {
     ALIGN_SEQUENCES(GROUP_BY_BARCODES.out.grouped_reads)
     MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
     VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus.combine(reference_ch))
-}
-
-workflow {
-    log.info """
-    ┌─────────────────────────────────────────────┐
-    │ O N T   C O N S E N S U S   P I P E L I N E │
-    │ by Fabian Ackle                             │  
-    └─────────────────────────────────────────────┘
-    """
-    .stripIndent()
-
-    basecalled_ch = Channel.fromPath(params.data)
-    reference_ch = Channel.fromPath(params.reference)
-
-    consensus(basecalled_ch, reference_ch)
 }

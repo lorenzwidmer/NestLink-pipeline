@@ -6,7 +6,7 @@ process BAM_TO_FASTQ {
     tag "${basecalled.baseName}"
 
     input:
-    path(basecalled)
+    path basecalled
 
     output:
     tuple val(basecalled.baseName), path("${basecalled.baseName}.fastq.gz"), emit: fastq_gz
@@ -14,8 +14,8 @@ process BAM_TO_FASTQ {
     script:
     """
     samtools fastq \
-        --threads $task.cpus \
+        --threads ${task.cpus} \
         ${basecalled} \
-        | pigz -p $task.cpus > ${basecalled.baseName}.fastq.gz
+        | pigz -p ${task.cpus} > ${basecalled.baseName}.fastq.gz
     """
 }

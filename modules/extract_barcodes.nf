@@ -16,15 +16,15 @@ process EXTRACT_BARCODES {
     extract_barcode_adapter_rc=\$(echo '${params.extract_barcode_adapter}' | tr 'ACGTacgt.' 'TGCAtgca.' | rev)
 
     cutadapt \
-        -j $task.cpus \
-        -g $params.extract_barcode_adapter \
+        -j ${task.cpus} \
+        -g ${params.extract_barcode_adapter} \
         --error-rate 0.1 \
         --minimum-length 30 --maximum-length 50 \
         --discard-untrimmed \
         --fasta ${fastq_gz} > ${sample_id}_barcodes_fwd.fasta
 
     cutadapt \
-        -j $task.cpus \
+        -j ${task.cpus} \
         -g \$extract_barcode_adapter_rc \
         --error-rate 0.1 \
         --minimum-length 30 --maximum-length 50 \
@@ -32,7 +32,7 @@ process EXTRACT_BARCODES {
         --fasta ${fastq_gz} > ${sample_id}_barcodes_rc.fasta
 
     seqkit seq \
-        --threads $task.cpus \
+        --threads ${task.cpus} \
         --seq-type dna \
         --reverse --complement ${sample_id}_barcodes_rc.fasta \
         --out-file ${sample_id}_barcodes_rev.fasta

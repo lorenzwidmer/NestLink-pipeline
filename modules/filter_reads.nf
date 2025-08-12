@@ -14,10 +14,10 @@ process FILTER_READS {
     script:
     """
     filtlong \
-        --min_mean_q $params.filter_quality \
-        --min_length $params.filter_min_length \
-        --max_length $params.filter_max_length \
+        --min_mean_q ${params.filter_quality} \
+        --min_length ${params.filter_min_length} \
+        --max_length ${params.filter_max_length} \
         ${reads} \
-        | pigz -p $task.cpus > ${sample_id}_filtered.fastq.gz
+        | pigz -p ${task.cpus} > ${sample_id}_filtered.fastq.gz
     """
 }
