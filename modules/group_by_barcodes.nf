@@ -5,8 +5,6 @@ process GROUP_BY_BARCODES {
     conda "bioconda::bwa=0.7.19 bioconda::samtools=1.22.1 bioconda::dnaio=1.2.3 conda-forge::polars=1.26.0 conda-forge::pyarrow=20.0.0 conda-forge::python-duckdb=1.3.2"
     tag "${sample_id}"
 
-    publishDir params.outdir, mode: 'copy', pattern: '*.csv'
-
     input:
     tuple val(sample_id), path(barcodes), path(sequences), path(reference)
 
