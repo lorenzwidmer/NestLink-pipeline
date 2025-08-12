@@ -18,19 +18,19 @@ process DUCKDB {
     cat << EOF > query.sql
 
     CREATE TABLE reads AS
-    FROM '${sample_id}_reads.csv';
+    FROM '${reads_csv}';
 
     CREATE TABLE clusters AS
-    FROM '${sample_id}_clusters.csv';
+    FROM '${clusters_csv}';
 
     CREATE TABLE mapped_reads AS
-    FROM '${sample_id}_mapped_reads.csv';
+    FROM '${mapped_reads_csv}';
 
     CREATE TABLE mapped_reads_filtered AS
-    FROM '${sample_id}_mapped_reads_filtered.csv';
+    FROM '${mapped_reads_filtered_csv}';
 
     CREATE TABLE variants AS
-    FROM '${sample_id}_variants.csv';
+    FROM '${variants_csv}';
 
     CREATE VIEW barcodes AS
     FROM reads
