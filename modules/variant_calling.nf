@@ -11,8 +11,8 @@ process VARIANT_CALLING {
     tuple val(sample_id), path(assembly), path(reference)
 
     output:
-    path "${sample_id}_variants.csv", emit: variants_db
-    path "${sample_id}_barcodemap.txt.gz", emit: enrich2_barcodemap
+    tuple val(sample_id), path("${sample_id}_variants.csv"), emit: variants_db
+    tuple val(sample_id), path("${sample_id}_barcodemap.txt.gz"), emit: enrich2_barcodemap
 
     script:
     """
