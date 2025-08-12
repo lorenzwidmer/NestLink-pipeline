@@ -26,6 +26,9 @@ process DUCKDB {
     CREATE TABLE mapped_reads AS
     FROM '${sample_id}_mapped_reads.csv';
 
+    CREATE TABLE mapped_reads_filtered AS
+    FROM '${sample_id}_mapped_reads_filtered.csv';
+
     CREATE TABLE variants AS
     FROM '${sample_id}_variants.csv';
 
