@@ -18,19 +18,48 @@ process DUCKDB {
     cat << EOF > query.sql
 
     CREATE TABLE reads AS
-    FROM '${reads_csv}';
+    FROM read_csv('${reads_csv}',
+        columns = {
+            'read_id': 'UUID',
+            'barcode': 'VARCHAR',
+            'is_valid_barcode ': 'BOOLEAN'
+        });
 
     CREATE TABLE clusters AS
-    FROM '${clusters_csv}';
+    FROM read_csv('${clusters_csv}',
+        columns = {
+            'cluster_id': 'UUID',
+            'barcode': 'VARCHAR'
+        });
 
     CREATE TABLE mapped_reads AS
-    FROM '${mapped_reads_csv}';
+    FROM read_csv('${mapped_reads_csv}',
+        columns = {
+            'read_id': 'UUID',
+            'cluster_id': 'UUID',
+            'cigar': 'VARCHAR',
+            'edit_distance': UINT8
+        });
 
     CREATE TABLE mapped_reads_filtered AS
-    FROM '${mapped_reads_filtered_csv}';
+    FROM read_csv('${mapped_reads_filtered_csv}',
+        columns = {
+            'read_id': 'UUID',
+            'cluster_id': 'UUID',
+            'cigar': 'VARCHAR',
+            'edit_distance': UINT8
+        });
 
     CREATE TABLE variants AS
-    FROM '${variants_csv}';
+    FROM read_csv('${variants_csv}',
+        columns = {
+            'cluster_id': 'UUID',
+            'barcode': 'VARCHAR',
+            'position': 'UINT16',
+            'reference_aa': VARCHAR,
+            'variant_aa': 'VARCHAR',
+            'variant_type': VARCHAR
+        });
 
     CREATE VIEW barcodes AS
     FROM reads
