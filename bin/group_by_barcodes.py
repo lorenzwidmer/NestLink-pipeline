@@ -72,7 +72,7 @@ def map_barcodes_to_clusters(file_path):
             f"No aligned barcodes found in file '{file_path}'."
         )
 
-    return pl.DataFrame(data)
+    return pl.DataFrame(data, schema_overrides={"edit_distance": pl.UInt8})
 
 
 def bin_reads_by_barcodes(file_path, barcode_map):
@@ -200,14 +200,10 @@ def main(sample_id, barcodes, sequences, reference_seq, reference_barcode, barco
         SELECT 
             gen_random_uuid() AS cluster_id, 
             barcode
-        FROM 
-            barcodes_df
-        WHERE 
-            is_valid_barcode
-        GROUP BY 
-            barcode
-        HAVING 
-            COUNT(barcode) >= 10;
+        FROM barcodes_df
+        WHERE is_valid_barcode
+        GROUP BY barcode
+        HAVING COUNT(barcode) >= 10;
         """
     ).pl()
     clusters_df.write_csv(f"{sample_id}_clusters.csv")

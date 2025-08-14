@@ -8,6 +8,7 @@ include { GROUP_BY_BARCODES } from './modules/group_by_barcodes.nf'
 include { ALIGN_SEQUENCES   } from './modules/align_sequences.nf'
 include { MEDAKA_CONSENSUS  } from './modules/medaka_consensus.nf'
 include { VARIANT_CALLING   } from './modules/variant_calling.nf'
+include { DUCKDB            } from './modules/duckdb.nf'
 
 /* Workflows */
 workflow {
@@ -40,4 +41,6 @@ workflow consensus {
     ALIGN_SEQUENCES(GROUP_BY_BARCODES.out.grouped_reads)
     MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
     VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus.combine(reference_ch))
+    csv_ch = GROUP_BY_BARCODES.out.csv.join(VARIANT_CALLING.out.variants_db)
+    DUCKDB(csv_ch)
 }
