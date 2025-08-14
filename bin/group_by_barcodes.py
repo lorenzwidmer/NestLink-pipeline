@@ -72,7 +72,7 @@ def map_barcodes_to_clusters(file_path):
             f"No aligned barcodes found in file '{file_path}'."
         )
 
-    return pl.DataFrame(data)
+    return pl.DataFrame(data, schema_overrides={"edit_distance": pl.UInt8})
 
 
 def bin_reads_by_barcodes(file_path, barcode_map):
