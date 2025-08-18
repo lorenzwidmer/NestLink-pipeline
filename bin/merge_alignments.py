@@ -41,18 +41,5 @@ def merge_bams(files_list, output_file):
     subprocess.run(cmd, check=True)
 
 
-def main():
-    """
-    Main function to merge, sort, and index BAM files using samtools.
-    """
-    merge_bam_files()
-
-    cmd_sort = ["samtools", "sort", "merged.bam", "-o", "merged.sorted.bam"]
-    subprocess.run(cmd_sort, check=True)
-
-    cmd_index = ["samtools", "index", "merged.sorted.bam"]
-    subprocess.run(cmd_index, check=True)
-
-
 if __name__ == "__main__":
-    main()
+    merge_bam_files()

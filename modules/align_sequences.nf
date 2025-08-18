@@ -17,6 +17,9 @@ process ALIGN_SEQUENCES {
 
     merge_alignments.py
 
+    samtools sort -@ ${task.cpus} merged.bam -o ${sample_id}.bam
+    samtools index -@ ${task.cpus} ${sample_id}.bam
+
     rm temp/*.bam merged.bam
     """
 }
