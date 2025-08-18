@@ -13,7 +13,7 @@ process ALIGN_SEQUENCES {
 
     script:
     """
-    prepare_alignments.sh ${task.cpus}
+    prepare_alignments.sh -i clusters -r references -o alignments -t ${task.cpus}
 
     merge_alignments.py
 
