@@ -15,11 +15,9 @@ process ALIGN_SEQUENCES {
     """
     prepare_alignments.sh -i clusters -r references -o alignments -t ${task.cpus}
 
-    merge_alignments.py
+    merge_alignments.py -i alignments -o merged.bam
 
     samtools sort -@ ${task.cpus} merged.bam -o ${sample_id}.bam
     samtools index -@ ${task.cpus} ${sample_id}.bam
-
-    rm temp/*.bam merged.bam
     """
 }
