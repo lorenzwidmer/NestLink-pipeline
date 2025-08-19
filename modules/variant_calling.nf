@@ -2,7 +2,7 @@ process VARIANT_CALLING {
     cpus 1
     memory '1 GB'
     time '5m'
-    conda "bioconda::dnaio=1.2.3 conda-forge::biopython=1.85 conda-forge::polars=1.26.0"
+    conda "bioconda::dnaio=1.2.3 conda-forge::biopython=1.85 conda-forge::polars=1.32.3"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy'
