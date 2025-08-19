@@ -6,14 +6,14 @@ process ALIGN_SEQUENCES {
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path("clusters/*"), path("references/*"), path("references.fasta")
+    tuple val(sample_id), path("grouped/*"), path("references/*"), path("references.fasta")
 
     output:
-    tuple val(sample_id), path("references.fasta"), path("merged.sorted.bam"), path("merged.sorted.bam.bai"), emit: alignment
+    tuple val(sample_id), path("references.fasta"), path("${sample_id}.bam"), path("${sample_id}.bam.bai"), emit: alignment
 
     script:
     """
-    prepare_alignments.sh -i clusters -r references -o alignments -t ${task.cpus}
+    prepare_alignments.sh -i grouped -r references -o alignments -t ${task.cpus}
 
     merge_alignments.py -i alignments -o merged.bam
 
