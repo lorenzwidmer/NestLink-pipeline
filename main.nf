@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
 /* Modules */
+include { GATHER_SAMPLE     } from './modules/gather_sample.nf'
 include { BAM_TO_FASTQ      } from './modules/bam_to_fastq.nf'
 include { FILTER_READS      } from './modules/filter_reads.nf'
 include { EXTRACT_BARCODES  } from './modules/extract_barcodes.nf'
@@ -33,7 +34,8 @@ workflow consensus {
     reference_ch
 
     main:
-    BAM_TO_FASTQ(basecalled_ch)
+    GATHER_SAMPLE(basecalled_ch)
+    BAM_TO_FASTQ(GATHER_SAMPLE.out.calls)
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_BARCODES(FILTER_READS.out.reads)
     barcodes_sequences_ch = EXTRACT_BARCODES.out.barcodes.join(FILTER_READS.out.reads)
