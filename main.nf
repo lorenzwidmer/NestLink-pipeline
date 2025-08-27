@@ -7,6 +7,7 @@ include { DORADO_ALIGNER    } from './modules/dorado_aligner.nf'
 include { FILTER_READS      } from './modules/filter_reads.nf'
 include { EXTRACT_BARCODES  } from './modules/extract_barcodes.nf'
 include { GROUP_BY_BARCODES } from './modules/group_by_barcodes.nf'
+include { REMAP_BAM         } from './modules/remap_bam.nf'
 include { VARIANT_CALLING   } from './modules/variant_calling.nf'
 include { DUCKDB            } from './modules/duckdb.nf'
 
@@ -40,4 +41,6 @@ workflow consensus {
     EXTRACT_BARCODES(FILTER_READS.out.reads)
     barcodes_sequences_ch = EXTRACT_BARCODES.out.barcodes.join(FILTER_READS.out.reads)
     GROUP_BY_BARCODES(barcodes_sequences_ch.combine(reference_ch))
+    polish_ch = DORADO_ALIGNER.out.alignment.join(GROUP_BY_BARCODES.out.barcode_map).combine(reference_ch)
+    REMAP_BAM(polish_ch)
 }
