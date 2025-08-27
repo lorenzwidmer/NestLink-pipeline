@@ -186,9 +186,6 @@ def main(sample_id, barcodes, sequences, reference_seq, barcode_regex):
     ).pl()
     mapped_barcodes_df.write_csv(f"{sample_id}_mapped_reads_filtered.csv")
 
-    # Converting the barcode map into a dict.
-    barcode_map = {row["read_id"]: row["cluster_id"] for row in mapped_barcodes_df.iter_rows(named=True)}
-
     # Writing references to disk.
     write_references(clusters_df, reference_seq)
 
