@@ -8,6 +8,7 @@ include { FILTER_READS      } from './modules/filter_reads.nf'
 include { EXTRACT_BARCODES  } from './modules/extract_barcodes.nf'
 include { GROUP_BY_BARCODES } from './modules/group_by_barcodes.nf'
 include { REMAP_BAM         } from './modules/remap_bam.nf'
+include { DORADO_CONSENSUS  } from './modules/dorado_consensus.nf'
 include { VARIANT_CALLING   } from './modules/variant_calling.nf'
 include { DUCKDB            } from './modules/duckdb.nf'
 
@@ -36,11 +37,26 @@ workflow consensus {
     main:
     GATHER_SAMPLE(basecalled_ch)
     BAM_TO_FASTQ(GATHER_SAMPLE.out.calls)
-    DORADO_ALIGNER(GATHER_SAMPLE.out.calls.combine(reference_ch))
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_BARCODES(FILTER_READS.out.reads)
-    barcodes_sequences_ch = EXTRACT_BARCODES.out.barcodes.join(FILTER_READS.out.reads)
-    GROUP_BY_BARCODES(barcodes_sequences_ch.combine(reference_ch))
-    polish_ch = DORADO_ALIGNER.out.alignment.join(GROUP_BY_BARCODES.out.barcode_map).combine(reference_ch)
-    REMAP_BAM(polish_ch)
+
+    barcodes_ch = EXTRACT_BARCODES.out.barcodes.combine(reference_ch)
+    GROUP_BY_BARCODES(barcodes_ch)
+
+    align_ch = GATHER_SAMPLE.out.calls.combine(reference_ch)
+    DORADO_ALIGNER(align_ch)
+
+    remap_ch = DORADO_ALIGNER.out.alignment
+        .join(GROUP_BY_BARCODES.out.barcode_map)
+        .combine(reference_ch)
+    REMAP_BAM(remap_ch)
+
+    consensus_ch = REMAP_BAM.out.bam.join(GROUP_BY_BARCODES.out.references)
+    DORADO_CONSENSUS(consensus_ch)
+
+    variant_ch = DORADO_CONSENSUS.out.consensus.combine(reference_ch)
+    VARIANT_CALLING(variant_ch)
+
+    duck_ch = GROUP_BY_BARCODES.out.csv.join(VARIANT_CALLING.out.variants_db)
+    DUCKDB(duck_ch)
 }
