@@ -6,7 +6,7 @@ process GROUP_BY_BARCODES {
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path(barcodes), path(sequences), path(reference)
+    tuple val(sample_id), path(barcodes), path(reference)
 
     output:
     tuple val(sample_id), path("references.fasta"), emit: references
@@ -18,7 +18,6 @@ process GROUP_BY_BARCODES {
     group_by_barcodes.py \
         --sample_id ${sample_id} \
         --barcodes ${barcodes} \
-        --sequence ${sequences} \
         --reference_seq ${reference} \
         --barcode_regex "${params.barcode_regex}"
     """

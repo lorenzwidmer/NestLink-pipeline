@@ -109,14 +109,13 @@ def write_references(clusters_df, reference_seq):
             writer.write(record)
 
 
-def main(sample_id, barcodes, sequences, reference_seq, barcode_regex):
+def main(sample_id, barcodes, reference_seq, barcode_regex):
     """
     Main function to validate and cluster barcodes and map reads to clusters.
 
     Args:
         sample_id (str): The sample id.
         barcodes (str): Path to the FASTA file with extracted barcodes.
-        sequences (str): Path to the FASTQ.GZ file with original read sequences.
         reference_seq (str): Path to the reference sequence FASTA file.
         barcode_regex (srt): Regex that matches the used barcode.
     """
@@ -195,8 +194,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample_id", type=str)
     parser.add_argument("--barcodes", type=str)
-    parser.add_argument("--sequences", type=str)
     parser.add_argument("--reference_seq", type=str)
     parser.add_argument("--barcode_regex", type=str)
     args = parser.parse_args()
-    main(args.sample_id, args.barcodes, args.sequences, args.reference_seq, args.barcode_regex)
+    main(args.sample_id, args.barcodes, args.reference_seq, args.barcode_regex)
