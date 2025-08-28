@@ -4,6 +4,8 @@ process DORADO_CONSENSUS {
     time '2h'
     tag "${sample_id}"
 
+    publishDir params.outdir, mode: 'copy', pattern: '*.fastq'
+
     input:
     tuple val(sample_id), path(bam), path(bai), path(reference)
 
