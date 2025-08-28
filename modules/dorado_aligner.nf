@@ -2,7 +2,7 @@ process DORADO_ALIGNER {
     cpus 8
     memory '16 GB'
     time '60m'
-    tag "${basecalled.baseName}"
+    tag "${sample_id}"
 
     input:
     tuple val(sample_id), path(basecalled), path(reference)
