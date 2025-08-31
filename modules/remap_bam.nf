@@ -6,7 +6,7 @@ process REMAP_BAM {
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path(alignment), path(barcode_map), path(reference)
+    tuple val(sample_id), path(alignment), path(barcode_map)
 
     output:
     tuple val(sample_id), path("${sample_id}.bam"), path("${sample_id}.bam.bai"), emit: bam
@@ -15,7 +15,6 @@ process REMAP_BAM {
     """
     remap_bam.py \
         --barcode_map ${barcode_map} \
-        --reference ${reference} \
         --input_bam ${alignment} \
         --output_bam ${sample_id}_unsorted.bam
 

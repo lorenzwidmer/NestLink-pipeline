@@ -46,9 +46,7 @@ workflow consensus {
     align_ch = GATHER_SAMPLE.out.calls.combine(reference_ch)
     DORADO_ALIGNER(align_ch)
 
-    remap_ch = DORADO_ALIGNER.out.alignment
-        .join(GROUP_BY_BARCODES.out.barcode_map)
-        .combine(reference_ch)
+    remap_ch = DORADO_ALIGNER.out.alignment.join(GROUP_BY_BARCODES.out.barcode_map)
     REMAP_BAM(remap_ch)
 
     consensus_ch = REMAP_BAM.out.bam.join(GROUP_BY_BARCODES.out.references)

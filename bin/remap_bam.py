@@ -1,37 +1,24 @@
 #!/usr/bin/env python3
 import argparse
 import csv
-import dnaio
 import pysam
 
 
-def reference_length(reference_seq):
-    """
-    Get length of reference sequence.
-
-    Args:
-        reference_seq (str): Path to the reference sequence FASTA file.
-    """
-    # Open and read the reference sequence.
-    with dnaio.open(reference_seq, mode="r") as reader:
-        reference_record = None
-        for record in reader:
-            reference_record = record
-            break  # stop after the first record
-        return len(reference_record.sequence)
-
-
-def main(barcode_map, reference, input_bam, output_bam):
+def main(barcode_map, input_bam, output_bam):
     with open(barcode_map, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         rows = list(reader)
         qname_to_rname = {row['read_id']: row['cluster_id'] for row in rows}  # dict mapping qname to rname
         rnames = {row['cluster_id'] for row in rows}                          # uniqe rnames
 
-    ln = reference_length(reference)
-
     with pysam.AlignmentFile(input_bam, "rb") as bam_in:
         header_dict = bam_in.header.to_dict()
+
+        if len(header_dict["SQ"]) != 1:
+            raise ValueError("Not exactly one reference found!")
+
+        ln = header_dict["SQ"][0]["LN"]
+
         header_dict["SQ"] = [{"SN": rname, "LN": ln} for rname in rnames]   # new references
 
         with pysam.AlignmentFile("temp.bam", "wb", header=header_dict) as bam_out:
@@ -55,9 +42,8 @@ def main(barcode_map, reference, input_bam, output_bam):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--barcode_map", required=True, type=str)
-    parser.add_argument("-r", "--reference", required=True, type=str)
     parser.add_argument("-i", "--input_bam", required=True, type=str)
     parser.add_argument("-o", "--output_bam", required=True, type=str)
     args = parser.parse_args()
 
-    main(args.barcode_map, args.reference, args.input_bam, args.output_bam)
+    main(args.barcode_map, args.input_bam, args.output_bam)
