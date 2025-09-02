@@ -2,6 +2,7 @@ process DORADO_ALIGNER {
     cpus 8
     memory '16 GB'
     time '60m'
+    container 'ontresearch/dorado:latest'
     tag "${sample_id}"
 
     input:
