@@ -5,7 +5,7 @@ process VARIANT_CALLING {
     conda "bioconda::dnaio=1.2.3 conda-forge::biopython=1.85 conda-forge::polars=1.32.3"
     tag "${sample_id}"
 
-    publishDir params.outdir, mode: 'copy'
+    publishDir params.outdir, mode: 'copy', pattern: '*.txt.gz'
 
     input:
     tuple val(sample_id), path(assembly), path(reference)

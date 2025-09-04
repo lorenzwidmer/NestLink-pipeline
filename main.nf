@@ -1,12 +1,14 @@
 #!/usr/bin/env nextflow
 
 /* Modules */
+include { GATHER_SAMPLE     } from './modules/gather_sample.nf'
 include { BAM_TO_FASTQ      } from './modules/bam_to_fastq.nf'
+include { DORADO_ALIGNER    } from './modules/dorado_aligner.nf'
 include { FILTER_READS      } from './modules/filter_reads.nf'
 include { EXTRACT_BARCODES  } from './modules/extract_barcodes.nf'
 include { GROUP_BY_BARCODES } from './modules/group_by_barcodes.nf'
-include { ALIGN_SEQUENCES   } from './modules/align_sequences.nf'
-include { MEDAKA_CONSENSUS  } from './modules/medaka_consensus.nf'
+include { REMAP_BAM         } from './modules/remap_bam.nf'
+include { DORADO_CONSENSUS  } from './modules/dorado_consensus.nf'
 include { VARIANT_CALLING   } from './modules/variant_calling.nf'
 include { DUCKDB            } from './modules/duckdb.nf'
 
@@ -33,14 +35,26 @@ workflow consensus {
     reference_ch
 
     main:
-    BAM_TO_FASTQ(basecalled_ch)
+    GATHER_SAMPLE(basecalled_ch)
+    BAM_TO_FASTQ(GATHER_SAMPLE.out.calls)
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_BARCODES(FILTER_READS.out.reads)
-    barcodes_sequences_ch = EXTRACT_BARCODES.out.barcodes.join(FILTER_READS.out.reads)
-    GROUP_BY_BARCODES(barcodes_sequences_ch.combine(reference_ch))
-    ALIGN_SEQUENCES(GROUP_BY_BARCODES.out.grouped_reads)
-    MEDAKA_CONSENSUS(ALIGN_SEQUENCES.out.alignment)
-    VARIANT_CALLING(MEDAKA_CONSENSUS.out.consensus.combine(reference_ch))
-    csv_ch = GROUP_BY_BARCODES.out.csv.join(VARIANT_CALLING.out.variants_db)
-    DUCKDB(csv_ch)
+
+    barcodes_ch = EXTRACT_BARCODES.out.barcodes.combine(reference_ch)
+    GROUP_BY_BARCODES(barcodes_ch)
+
+    align_ch = GATHER_SAMPLE.out.calls.combine(reference_ch)
+    DORADO_ALIGNER(align_ch)
+
+    remap_ch = DORADO_ALIGNER.out.alignment.join(GROUP_BY_BARCODES.out.barcode_map)
+    REMAP_BAM(remap_ch)
+
+    consensus_ch = REMAP_BAM.out.bam.join(GROUP_BY_BARCODES.out.references)
+    DORADO_CONSENSUS(consensus_ch)
+
+    variant_ch = DORADO_CONSENSUS.out.consensus.combine(reference_ch)
+    VARIANT_CALLING(variant_ch)
+
+    duck_ch = GROUP_BY_BARCODES.out.csv.join(VARIANT_CALLING.out.variants_db)
+    DUCKDB(duck_ch)
 }

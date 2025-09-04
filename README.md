@@ -9,9 +9,10 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 - Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html)), on the cluster it has to be installed in a mamba/ conda environment called `nextflow`. 
 - Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
 ### Local execution only
-- Podman ([https://podman.io/](https://podman.io/))
+- Dorado ([Installation guide](https://software-docs.nanoporetech.com/dorado/latest/#installation)).
 ### Cluster execution only
 - Slurm workflow manager
+- Singularity
 
 ## Running the pipeline
 1. Clone the repository with `git clone https://github.com/fabianackle/NestLink-pipeline.git`.
@@ -23,7 +24,6 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 |---------------------------|----------------------|---------------------------------------------|
 | `data`                    | String               | Path to input BAM file.                     |
 | `reference`               | String               | Path to reference FASTA file.               |
-| `reference_barcode`       | String               | Barcode sequence used in reference.         |
 | `filter_quality`          | Float                | Minimum mean read quality threshold.        |
 | `filter_min_length`       | Integer              | Read filtering minimum length threshold.    |
 | `filter_max_length`       | Integer              | Read filtering maximum length threshold.    |

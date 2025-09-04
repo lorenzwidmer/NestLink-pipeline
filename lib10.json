@@ -6,7 +6,7 @@
     "filter_max_length": 1900,
     "extract_barcode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
     "barcode_regex": "^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$",
-    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.2.0",
+    "medaka_dorado_model": "r1041_e82_400bps_sup_v5.0.0",
     "barcode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
     "orf_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
     "translate_barcode": true,

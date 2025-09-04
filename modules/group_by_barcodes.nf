@@ -6,10 +6,11 @@ process GROUP_BY_BARCODES {
     tag "${sample_id}"
 
     input:
-    tuple val(sample_id), path(barcodes), path(sequences), path(reference)
+    tuple val(sample_id), path(barcodes), path(reference)
 
     output:
-    tuple val(sample_id), path("clusters/*.fastq.gz"), path("references/*.fasta"), path("references.fasta"), emit: grouped_reads
+    tuple val(sample_id), path("references.fasta"), emit: references
+    tuple val(sample_id), path("${sample_id}_mapped_reads_filtered.csv"), emit: barcode_map
     tuple val(sample_id), path("${sample_id}_reads.csv"), path("${sample_id}_clusters.csv"), path("${sample_id}_mapped_reads.csv"), path("${sample_id}_mapped_reads_filtered.csv"), emit: csv
 
     script:
@@ -17,9 +18,7 @@ process GROUP_BY_BARCODES {
     group_by_barcodes.py \
         --sample_id ${sample_id} \
         --barcodes ${barcodes} \
-        --sequence ${sequences} \
         --reference_seq ${reference} \
-        --reference_barcode ${params.reference_barcode} \
         --barcode_regex "${params.barcode_regex}"
     """
 }

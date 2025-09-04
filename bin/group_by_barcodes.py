@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import subprocess
 from collections import defaultdict
 import dnaio
@@ -75,62 +74,14 @@ def map_barcodes_to_clusters(file_path):
     return pl.DataFrame(data, schema_overrides={"edit_distance": pl.UInt8})
 
 
-def bin_reads_by_barcodes(file_path, barcode_map):
+def write_references(clusters_df, reference_seq):
     """
-    Group reads by cluster ID using a barcode mapping, returning a dict of binned reads.
-
-    Args:
-        file_path (str): Path to the FASTQ.GZ file containing reads.
-        barcode_map (dict): Dictionairy containing mapping of read IDs to cluster IDs.
-
-    Returns:
-        dict: A dictionary where keys are cluster IDs and values are lists of read records.
-    """
-    if not barcode_map:
-        raise ValueError(
-            "The barcode map is empty. Check mapped_barcodes_df filtering."
-        )
-    binned_reads = defaultdict(list)
-    with dnaio.open(file_path) as reader:
-        for record in reader:
-            readid = record.name.split('\t')[0]
-            if readid in barcode_map:
-                cluster_id = barcode_map[readid]
-                binned_reads[cluster_id].append(record)
-    if not binned_reads:
-        raise ValueError(
-            "No reads binned."
-        )
-    return dict(binned_reads)
-
-
-def write_binned_reads(binned_reads):
-    """
-    Write reads binned by cluster to a compressed FASTQ.GZ file in the 'clusters' folder.
-
-    Args:
-        binned_reads (dict): A dictionary with cluster IDs as keys and read lists as values.
-    """
-    os.makedirs("clusters")
-
-    for cluster_id, reads in binned_reads.items():
-        file_path = f"clusters/{cluster_id}.fastq.gz"
-        with dnaio.open(file_path, mode="w") as writer:
-            for record in reads:
-                writer.write(record)
-
-
-def write_references(clusters_df, reference_seq, reference_barcode):
-    """
-    Create per-cluster reference FASTA files and a combined reference FASTA file in the 'references' folder.
+    Write reference FASTA file containing all clusters.
 
     Args:
         clusters_df (pl.DataFrame): DataFrame with cluster IDs and their barcodes.
         reference_seq (str): Path to the reference sequence FASTA file.
-        reference_barcode (str): barcode sequence used in the reference sequence.
     """
-    os.makedirs("references")
-
     # Open and read the reference sequence.
     with dnaio.open(reference_seq, mode="r") as reader:
         reference_record = None
@@ -146,43 +97,26 @@ def write_references(clusters_df, reference_seq, reference_barcode):
 
         reference_sequence = reference_record.sequence
 
-    # Splitting the reference intwo two parts using the barcode as delimiter.
-    reference = reference_sequence.split(reference_barcode)
-
-    if len(reference) != 2:
-        raise ValueError(
-            f"The reference sequence does not split into two parts with "
-            f"the delimiter '{reference_barcode}'. Please check the file or delimiter."
-        )
-
     records = []  # for storing all cluster records.
-
-    # Writing individual reference files for each cluster.
-    for cluster_id, barcode in clusters_df.rows():
-        file_name = f"references/{cluster_id}.fasta"
-        reference_sequence = f"{reference[0]}{barcode}{reference[1]}"
+    for cluster_id, _ in clusters_df.rows():
         record = dnaio.SequenceRecord(cluster_id, reference_sequence)
         records.append(record)
-        with dnaio.open(file_name, mode="w") as writer:
-            writer.write(record)
 
-    # Writing a reference file containing all clusters (used by medaka sequence).
+    # Writing a reference file containing all clusters (used by dorado polish).
     file_name = "references.fasta"
     with dnaio.open(file_name, mode="w") as writer:
         for record in records:
             writer.write(record)
 
 
-def main(sample_id, barcodes, sequences, reference_seq, reference_barcode, barcode_regex):
+def main(sample_id, barcodes, reference_seq, barcode_regex):
     """
-    Main function to validate and cluster barcodes, bin reads based on theses clusters and write them to disk.
+    Main function to validate and cluster barcodes and map reads to clusters.
 
     Args:
         sample_id (str): The sample id.
         barcodes (str): Path to the FASTA file with extracted barcodes.
-        sequences (str): Path to the FASTQ.GZ file with original read sequences.
         reference_seq (str): Path to the reference sequence FASTA file.
-        reference_barcode (str): barcode sequence used in the reference sequence.
         barcode_regex (srt): Regex that matches the used barcode.
     """
     # Reading in the barcodes.
@@ -251,15 +185,8 @@ def main(sample_id, barcodes, sequences, reference_seq, reference_barcode, barco
     ).pl()
     mapped_barcodes_df.write_csv(f"{sample_id}_mapped_reads_filtered.csv")
 
-    # Converting the barcode map into a dict.
-    barcode_map = {row["read_id"]: row["cluster_id"] for row in mapped_barcodes_df.iter_rows(named=True)}
-
-    # Binning reads by barcode cluster, storing them in a dict.
-    binned_reads = bin_reads_by_barcodes(sequences, barcode_map)
-
-    # Writing binned reads and references to disk.
-    write_binned_reads(binned_reads)
-    write_references(clusters_df, reference_seq, reference_barcode)
+    # Writing references to disk.
+    write_references(clusters_df, reference_seq)
 
 
 if __name__ == "__main__":
@@ -267,9 +194,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample_id", type=str)
     parser.add_argument("--barcodes", type=str)
-    parser.add_argument("--sequences", type=str)
     parser.add_argument("--reference_seq", type=str)
-    parser.add_argument("--reference_barcode", type=str)
     parser.add_argument("--barcode_regex", type=str)
     args = parser.parse_args()
-    main(args.sample_id, args.barcodes, args.sequences, args.reference_seq, args.reference_barcode, args.barcode_regex)
+    main(args.sample_id, args.barcodes, args.reference_seq, args.barcode_regex)
