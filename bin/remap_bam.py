@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Thank you, Lorenz (https://github.com/lorenzwidmer), for the idea with the BAM remapping!
+"""
 import argparse
 import csv
 import pysam
