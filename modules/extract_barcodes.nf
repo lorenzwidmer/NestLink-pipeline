@@ -19,7 +19,7 @@ process EXTRACT_BARCODES {
         -j ${task.cpus} \
         -g ${params.extract_barcode_adapter} \
         --error-rate 0.1 \
-        --minimum-length 30 --maximum-length 50 \
+        --maximum-length 50 \
         --discard-untrimmed \
         --fasta ${fastq_gz} > ${sample_id}_barcodes_fwd.fasta
 
@@ -27,7 +27,7 @@ process EXTRACT_BARCODES {
         -j ${task.cpus} \
         -g \$extract_barcode_adapter_rc \
         --error-rate 0.1 \
-        --minimum-length 30 --maximum-length 50 \
+        --maximum-length 50 \
         --discard-untrimmed \
         --fasta ${fastq_gz} > ${sample_id}_barcodes_rc.fasta
 
