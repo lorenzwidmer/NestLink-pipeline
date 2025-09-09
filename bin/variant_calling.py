@@ -8,7 +8,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 
 
-def extract_sequences(file_path, barcode, orf):
+def extract_sequences(file_path, barcode, orf, translate_barcode):
     """
     Parse a FASTA file to extract barcode and ORF sequences.
 
@@ -16,6 +16,7 @@ def extract_sequences(file_path, barcode, orf):
         file_path (str): Path to the FASTA file.
         barcode (tuple): A (start_pattern, end_pattern) tuple for the barcode.
         orf (tuple): A (start_pattern, end_pattern) tuple for the ORF.
+        translate_barcode (bool): Translate DNA barcodes, used for flycodes.
 
     Returns:
         dict: Keys are cluster IDs; values are tuples of extracted sequences (barcode_seq, orf_seq) in-frame only.
@@ -28,8 +29,8 @@ def extract_sequences(file_path, barcode, orf):
 
     sequences = {}
 
-    fc_start = re.compile(barcode[0], re.IGNORECASE)
-    fc_end = re.compile(barcode[1], re.IGNORECASE)
+    bc_start = re.compile(barcode[0], re.IGNORECASE)
+    bc_end = re.compile(barcode[1], re.IGNORECASE)
 
     orf_start = re.compile(orf[0], re.IGNORECASE)
     orf_end = re.compile(orf[1], re.IGNORECASE)
@@ -40,16 +41,17 @@ def extract_sequences(file_path, barcode, orf):
             sequence = record.sequence
 
             # Search for barcodes
-            fc_start_match = fc_start.search(sequence)
-            fc_end_match = fc_end.search(sequence)
+            bc_start_match = bc_start.search(sequence)
+            bc_end_match = bc_end.search(sequence)
 
             # Search for orf
             orf_start_match = orf_start.search(sequence)
             orf_end_match = orf_end.search(sequence)
 
             # Extract sequences if matches are found and in-frame
-            if fc_start_match and fc_end_match and is_in_frame(fc_start_match, fc_end_match):
-                barcode_sequence = extract_subsequence(sequence, fc_start_match, fc_end_match)
+            # When barcodes are translated, they have to be in-frame.
+            if bc_start_match and bc_end_match and (not translate_barcode or is_in_frame(bc_start_match, bc_end_match)):
+                barcode_sequence = extract_subsequence(sequence, bc_start_match, bc_end_match)
 
                 if orf_start_match and orf_end_match and is_in_frame(orf_start_match, orf_end_match):
                     orf_sequence = extract_subsequence(sequence, orf_start_match, orf_end_match)
@@ -98,7 +100,7 @@ def get_variants(sequences, reference, translate_barcode):
     Args:
         sequences (dict): Dictionary mapping cluster IDs to extracted (barcode, ORF) sequences.
         reference (dict): Dictionary containing exactly one reference entry of the same format.
-        translate_barcode (bool): Translate DNA barcodes, used for barcodes.
+        translate_barcode (bool): Translate DNA barcodes, used for flycodes.
 
     Returns:
        pl.DataFrame: Contains cluster_ID, barcode, amino acid change position, reference amino acid, variant amino acid and variant type.
@@ -158,8 +160,8 @@ def main(args):
     orf_pattern = args.orf_pattern
     translate_barcode = args.translate_barcode
 
-    sequences = extract_sequences(assembly_path, barcode_pattern, orf_pattern)
-    reference = extract_sequences(reference_path, barcode_pattern, orf_pattern)
+    sequences = extract_sequences(assembly_path, barcode_pattern, orf_pattern, translate_barcode)
+    reference = extract_sequences(reference_path, barcode_pattern, orf_pattern, translate_barcode)
 
     variants = get_variants(sequences, reference, translate_barcode)
     variants.write_csv(f"{sample_id}_variants.csv")
