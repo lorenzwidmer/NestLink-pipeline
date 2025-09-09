@@ -172,7 +172,8 @@ def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
                 cluster_id,
                 cigar,
                 edit_distance,
-                row_number() OVER (PARTITION BY cluster_id ORDER BY edit_distance ASC) AS row_num
+                row_number() OVER (PARTITION BY cluster_id ORDER BY edit_distance ASC) AS row_num,
+                COUNT(*) OVER (PARTITION BY cluster_id) AS cluster_size
             FROM mapped_barcodes_df
         )
         SELECT 
@@ -181,7 +182,9 @@ def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
             cigar,
             edit_distance
         FROM ranked_reads
-        WHERE row_num <= 100;
+        WHERE
+            row_num <= 100 AND
+            cluster_size >= 10;
         """
     ).pl()
     mapped_barcodes_df.write_csv(f"{sample_id}_mapped_reads_filtered.csv")
