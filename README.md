@@ -29,7 +29,6 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 | `filter_max_length`       | Integer              | Read filtering maximum length threshold.    |
 | `extract_barcode_adapter` | String               | Linked adapter for barcode extraction.      |
 | `barcode_regex`           | String               | Regular expression matching the barcode.    |
-| `medaka_dorado_model`     | String               | Dorado model used for basecalling.          |
 | `barcode_pattern`         | List(String, String) | Sequences flanking the barcode.             |
 | `orf_pattern`             | List(String, String) | Sequences flanking ORF.                     |
 | `translate_barcode`       | Boolean              | Translates barcode, used with flycodes.     |
