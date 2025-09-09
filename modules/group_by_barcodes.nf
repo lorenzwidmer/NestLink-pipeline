@@ -19,6 +19,7 @@ process GROUP_BY_BARCODES {
         --sample_id ${sample_id} \
         --barcodes ${barcodes} \
         --reference_seq ${reference} \
-        --barcode_regex "${params.barcode_regex}"
+        --barcode_regex "${params.barcode_regex}" \
+        --threads ${task.cpus}
     """
 }

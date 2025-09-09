@@ -109,7 +109,7 @@ def write_references(clusters_df, reference_seq):
             writer.write(record)
 
 
-def main(sample_id, barcodes, reference_seq, barcode_regex):
+def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
     """
     Main function to validate and cluster barcodes and map reads to clusters.
 
@@ -118,6 +118,7 @@ def main(sample_id, barcodes, reference_seq, barcode_regex):
         barcodes (str): Path to the FASTA file with extracted barcodes.
         reference_seq (str): Path to the reference sequence FASTA file.
         barcode_regex (srt): Regex that matches the used barcode.
+        threads (int): Threads for alignment.
     """
     # Reading in the barcodes.
     barcodes_df = barcodes_to_dataframe(barcodes)
@@ -152,7 +153,7 @@ def main(sample_id, barcodes, reference_seq, barcode_regex):
 
     # Aligning all barcodes to the reference.
     with open("barcodes_to_clusters.sai", "w") as sai_file:
-        subprocess.run(["bwa", "aln", "-N", "-n 2", "clusters.fasta", barcodes], stdout=sai_file, check=True)
+        subprocess.run(["bwa", "aln", "-t", str(threads), "-N", "-n 2", "clusters.fasta", barcodes], stdout=sai_file, check=True)
 
     # Generating alignments in the SAM format,
     with open("barcodes_to_clusters.sam", "w") as sam_file:
@@ -196,5 +197,6 @@ if __name__ == "__main__":
     parser.add_argument("--barcodes", type=str)
     parser.add_argument("--reference_seq", type=str)
     parser.add_argument("--barcode_regex", type=str)
+    parser.add_argument("--threads", type=int)
     args = parser.parse_args()
-    main(args.sample_id, args.barcodes, args.reference_seq, args.barcode_regex)
+    main(args.sample_id, args.barcodes, args.reference_seq, args.barcode_regex, args.threads)
