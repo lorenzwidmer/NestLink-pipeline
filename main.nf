@@ -1,7 +1,6 @@
 #!/usr/bin/env nextflow
 
 /* Modules */
-include { GATHER_SAMPLE     } from './modules/gather_sample.nf'
 include { BAM_TO_FASTQ      } from './modules/bam_to_fastq.nf'
 include { DORADO_ALIGNER    } from './modules/dorado_aligner.nf'
 include { FILTER_READS      } from './modules/filter_reads.nf'
@@ -23,7 +22,7 @@ workflow {
         """.stripIndent()
     )
 
-    basecalled_ch = Channel.fromPath(params.data)
+    basecalled_ch = Channel.fromPath(params.data).map { file -> tuple(file.baseName, file) }
     reference_ch = Channel.fromPath(params.reference)
 
     consensus(basecalled_ch, reference_ch)
@@ -35,15 +34,14 @@ workflow consensus {
     reference_ch
 
     main:
-    GATHER_SAMPLE(basecalled_ch)
-    BAM_TO_FASTQ(GATHER_SAMPLE.out.calls)
+    BAM_TO_FASTQ(basecalled_ch)
     FILTER_READS(BAM_TO_FASTQ.out.fastq_gz)
     EXTRACT_BARCODES(FILTER_READS.out.reads)
 
     barcodes_ch = EXTRACT_BARCODES.out.barcodes.combine(reference_ch)
     GROUP_BY_BARCODES(barcodes_ch)
 
-    align_ch = GATHER_SAMPLE.out.calls.combine(reference_ch)
+    align_ch = basecalled_ch.combine(reference_ch)
     DORADO_ALIGNER(align_ch)
 
     remap_ch = DORADO_ALIGNER.out.alignment.join(GROUP_BY_BARCODES.out.barcode_map)
