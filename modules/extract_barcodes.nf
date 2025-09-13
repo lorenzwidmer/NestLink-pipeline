@@ -1,7 +1,4 @@
 process EXTRACT_BARCODES {
-    cpus 8
-    memory '4 GB'
-    time '60m'
     conda "bioconda::cutadapt=5.1 bioconda::seqkit=2.10.1"
     tag "${sample_id}"
 

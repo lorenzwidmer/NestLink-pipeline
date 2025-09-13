@@ -1,7 +1,4 @@
 process DUCKDB {
-    cpus 8
-    memory '4 GB'
-    time '60m'
     conda "conda-forge::duckdb-cli=1.3.2"
     tag "${sample_id}"
 

@@ -1,7 +1,4 @@
 process BAM_TO_FASTQ {
-    cpus 8
-    memory '4 GB'
-    time '60m'
     conda "bioconda::samtools=1.22.1 conda-forge::pigz=2.8"
     tag "${basecalled.baseName}"
 

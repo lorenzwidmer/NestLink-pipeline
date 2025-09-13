@@ -1,7 +1,4 @@
 process REMAP_BAM {
-    cpus 8
-    memory '4 GB'
-    time '60m'
     conda "bioconda::dnaio=1.2.3 bioconda::pysam=0.23.3 bioconda::samtools=1.22.1"
     tag "${sample_id}"
 

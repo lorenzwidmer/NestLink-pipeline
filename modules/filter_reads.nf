@@ -1,7 +1,4 @@
 process FILTER_READS {
-    cpus 1
-    memory '4 GB'
-    time '60m'
     conda "bioconda::filtlong=0.3.0 conda-forge::pigz=2.8"
     tag "${sample_id}"
 
