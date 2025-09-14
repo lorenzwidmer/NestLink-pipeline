@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import subprocess
-from collections import defaultdict
 import dnaio
 import duckdb
 import polars as pl

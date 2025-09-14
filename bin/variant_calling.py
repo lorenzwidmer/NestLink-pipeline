@@ -3,7 +3,6 @@ import argparse
 import re
 import dnaio
 import polars as pl
-from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
 
