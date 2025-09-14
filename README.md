@@ -33,4 +33,5 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 | `orf_pattern`             | List(String, String) | Sequences flanking ORF.                     |
 | `translate_barcode`       | Boolean              | Translates barcode, used with flycodes.     |
 | `outdir`                  | String               | Output directory for results.               |
+
 † for multiple BAM files use `*`, e.g. `data/barcode*.bam`.
