@@ -52,10 +52,10 @@ process DUCKDB {
         columns = {
             'cluster_id': 'UUID',
             'barcode': 'VARCHAR',
+            'variant_type': VARCHAR,
             'position': 'UINT16',
             'reference_aa': VARCHAR,
-            'variant_aa': 'VARCHAR',
-            'variant_type': VARCHAR
+            'variant_aa': 'VARCHAR'
         });
 
     CREATE VIEW barcodes AS

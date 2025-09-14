@@ -136,10 +136,10 @@ def get_variants(sequences, reference, translate_barcode):
             data.extend({
                 "cluster_id": cluster_id,
                 "barcode": barcode,
+                "variant_type": "change",
                 "position": pos,
                 "reference_aa": ref_aa,
-                "variant_aa": var_aa,
-                "variant_type": "change"
+                "variant_aa": var_aa
             } for pos, ref_aa, var_aa in orf_aa_changes)
 
     return pl.DataFrame(data)
