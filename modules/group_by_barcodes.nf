@@ -14,9 +14,10 @@ process GROUP_BY_BARCODES {
     """
     group_by_barcodes.py \
         --sample_id ${sample_id} \
-        --barcodes ${barcodes} \
         --reference_seq ${reference} \
+        --barcodes ${barcodes} \
         --barcode_regex "${params.barcode_regex}" \
+        --barcode_min_coverage ${params.barcode_min_coverage} \
         --threads ${task.cpus}
     """
 }

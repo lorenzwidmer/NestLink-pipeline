@@ -108,7 +108,7 @@ def write_references(clusters_df, reference_seq):
             writer.write(record)
 
 
-def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
+def main(sample_id:str, reference_seq:str, barcodes:str, barcode_min_coverage:int, barcode_regex:str, threads:int):
     """
     Main function to validate and cluster barcodes and map reads to clusters.
 
@@ -130,14 +130,14 @@ def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
 
     # Getting high-quality barcodes, they have to be valid and be seen more than 10 times.
     clusters_df = duckdb.sql(
-        """
+        f"""
         SELECT 
             gen_random_uuid() AS cluster_id, 
             barcode
         FROM barcodes_df
         WHERE is_valid_barcode
         GROUP BY barcode
-        HAVING COUNT(barcode) >= 10;
+        HAVING COUNT(barcode) >= {barcode_min_coverage};
         """
     ).pl()
     clusters_df.write_csv(f"{sample_id}_clusters.csv")
@@ -191,14 +191,23 @@ def main(sample_id, barcodes, reference_seq, barcode_regex, threads):
     # Writing references to disk.
     write_references(clusters_df, reference_seq)
 
-
 if __name__ == "__main__":
     # Reading arguments and calling the main function.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sample_id", type=str)
-    parser.add_argument("--barcodes", type=str)
-    parser.add_argument("--reference_seq", type=str)
-    parser.add_argument("--barcode_regex", type=str)
-    parser.add_argument("--threads", type=int)
+    parser.add_argument("--sample_id", type=str,
+        help="The sample id.")
+    parser.add_argument("--reference_seq", type=str,
+        help="Path to the reference sequence FASTA file.")
+    
+    parser.add_argument("--barcodes", type=str,
+        help="Path to the FASTA file with extracted barcodes.")
+    parser.add_argument("--barcode_min_coverage", type=int, default=10,
+        help="The minimal amount a barcode has to be seen to be considered a high-quality barcode.")
+    parser.add_argument("--barcode_regex", type=str,
+        help="Regex that matches the used barcode.")
+    
+    parser.add_argument("--threads", type=int,
+        help="threads (int): Threads for alignment.")
+
     args = parser.parse_args()
-    main(args.sample_id, args.barcodes, args.reference_seq, args.barcode_regex, args.threads)
+    main(args.sample_id, args.reference_seq, args.barcodes, args.barcode_min_coverage, args.barcode_regex, args.threads)
