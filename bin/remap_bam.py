@@ -5,9 +5,10 @@ Thank you, Lorenz (https://github.com/lorenzwidmer), for the idea with the BAM r
 import argparse
 import csv
 import pysam
+import sys
+import time
 
-
-def main(barcode_map, input_bam, output_bam):
+def main(barcode_map, input_bam):
     with open(barcode_map, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         rows = list(reader)
@@ -24,26 +25,24 @@ def main(barcode_map, input_bam, output_bam):
 
         header_dict["SQ"] += [{"SN": rname, "LN": ln} for rname in rnames]   # new references
         header = pysam.AlignmentHeader.from_dict(header_dict)
-
-    with pysam.AlignmentFile(input_bam, "rb", header=header) as bam_in:
-        with pysam.AlignmentFile(output_bam, "wb", header=header) as bam_out:
-            for read in bam_in.fetch(until_eof=True):
-                qname = read.query_name
-                if qname in qname_to_rname:
-                    rname = qname_to_rname[qname]
-
-                    rid = header.get_tid(rname)
-                    new_read = pysam.AlignedSegment.fromstring(read.to_string(), header)
-                    new_read.reference_id = rid
-                    
-                    bam_out.write(new_read)
-
+        sys.stdout.write(str(header))
+    
+        for read in bam_in.fetch(until_eof=True):
+            qname = read.query_name
+            if qname in qname_to_rname:
+                rname = qname_to_rname[qname]
+                
+                read_string = read.to_string().split('\t')
+                read_string[2] = rname
+                sys.stdout.write('\t'.join(read_string))
+                sys.stdout.write('\n')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--barcode_map", required=True, type=str)
     parser.add_argument("-i", "--input_bam", required=True, type=str)
-    parser.add_argument("-o", "--output_bam", required=True, type=str)
     args = parser.parse_args()
 
-    main(args.barcode_map, args.input_bam, args.output_bam)
+    t0 = time.time()
+    main(args.barcode_map, args.input_bam)
+    sys.stderr.write(f'Time elapsed: {round(time.time() - t0, 1)}s\n')
