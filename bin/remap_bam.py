@@ -22,24 +22,21 @@ def main(barcode_map, input_bam, output_bam):
 
         ln = header_dict["SQ"][0]["LN"]
 
-        header_dict["SQ"] = [{"SN": rname, "LN": ln} for rname in rnames]   # new references
+        header_dict["SQ"] += [{"SN": rname, "LN": ln} for rname in rnames]   # new references
+        header = pysam.AlignmentHeader.from_dict(header_dict)
 
-        with pysam.AlignmentFile("temp.bam", "wb", header=header_dict) as bam_out:
+    with pysam.AlignmentFile(input_bam, "rb", header=header) as bam_in:
+        with pysam.AlignmentFile(output_bam, "wb", header=header) as bam_out:
             for read in bam_in.fetch(until_eof=True):
                 qname = read.query_name
                 if qname in qname_to_rname:
-                    bam_out.write(read)
-
-    # second pass
-    with pysam.AlignmentFile("temp.bam", "rb") as bam_temp:
-        with pysam.AlignmentFile(output_bam, "wb", header=bam_temp.header) as bam_out:
-            for read in bam_temp.fetch(until_eof=True):
-                qname = read.query_name
-                if qname in qname_to_rname:
                     rname = qname_to_rname[qname]
-                    rid = bam_out.get_tid(rname)
-                    read.reference_id = rid
-                    bam_out.write(read)
+
+                    rid = header.get_tid(rname)
+                    new_read = pysam.AlignedSegment.fromstring(read.to_string(), header)
+                    new_read.reference_id = rid
+                    
+                    bam_out.write(new_read)
 
 
 if __name__ == "__main__":
