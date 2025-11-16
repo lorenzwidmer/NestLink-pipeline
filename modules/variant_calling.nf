@@ -1,5 +1,5 @@
 process VARIANT_CALLING {
-    conda "bioconda::dnaio=1.2.3 conda-forge::biopython=1.85 conda-forge::polars=1.32.3"
+    conda "bioconda::dnaio=1.2.3 conda-forge::biopython=1.86 conda-forge::polars=1.35.1"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy', pattern: '*.txt.gz'

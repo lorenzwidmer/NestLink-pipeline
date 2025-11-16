@@ -1,5 +1,5 @@
 process DUCKDB {
-    conda "conda-forge::duckdb-cli=1.3.2"
+    conda "conda-forge::duckdb-cli=1.4.1"
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy'

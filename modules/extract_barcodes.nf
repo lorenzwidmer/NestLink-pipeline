@@ -1,5 +1,5 @@
 process EXTRACT_BARCODES {
-    conda "bioconda::cutadapt=5.1 bioconda::seqkit=2.10.1"
+    conda "bioconda::cutadapt=5.2 bioconda::seqkit=2.10.1"
     tag "${sample_id}"
 
     input:
