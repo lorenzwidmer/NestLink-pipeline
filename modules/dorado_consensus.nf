@@ -15,7 +15,6 @@ process DORADO_CONSENSUS {
     dorado polish ${bam} ${reference} \
         --qualities \
         --ignore-read-groups \
-        --batchsize 250 \
         > ${sample_id}_polished.fastq
 
     gzip ${sample_id}_polished.fastq   
