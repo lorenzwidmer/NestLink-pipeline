@@ -164,7 +164,7 @@ def main(sample_id:str, reference_seq:str, barcodes:str, barcode_min_coverage:in
 
     # Filtering mapped_barcodes_df to only contain up to 100 reads with low edit distance barcodes per cluster.
     mapped_barcodes_df = duckdb.sql(
-        """
+        f"""
         WITH ranked_reads AS (
             SELECT 
                 read_id,
@@ -183,7 +183,7 @@ def main(sample_id:str, reference_seq:str, barcodes:str, barcode_min_coverage:in
         FROM ranked_reads
         WHERE
             row_num <= 100 AND
-            cluster_size >= 10;
+            cluster_size >= {barcode_min_coverage};
         """
     ).pl()
     mapped_barcodes_df.write_csv(f"{sample_id}_mapped_reads_filtered.csv")
