@@ -1,5 +1,4 @@
 process DORADO_CONSENSUS {
-    container 'ontresearch/dorado:latest'
     tag "${sample_id}"
 
     publishDir params.outdir, mode: 'copy', pattern: '*.fastq.gz'

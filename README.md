@@ -9,11 +9,11 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 ### Local and cluster execution
 - Nextflow ([Installation guide](https://www.nextflow.io/docs/latest/install.html)), on the cluster it has to be installed in a mamba/ conda environment called `nextflow`. 
 - Mamba/ Conda ([https://conda-forge.org/](https://conda-forge.org/))
-### Local execution only
 - Dorado ([Installation guide](https://software-docs.nanoporetech.com/dorado/latest/#installation)).
 ### Cluster execution only
 - Slurm workflow manager
-- Singularity
+> [!TIP]
+> Add dorado to your PATH e.g. by adding `export PATH="$PATH:/home/fackle/data/dorado-1.2.0-linux-x64/bin"` to your `.bashrc`.
 
 ## Running the pipeline
 
