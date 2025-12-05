@@ -6,7 +6,7 @@
 ##SBATCH --mail-user=user@example.com
 ##SBATCH --mail-type=BEGIN,END 
 
-module load mamba
+module load miniforge3
 eval "$(conda shell.bash hook)"
 conda activate nextflow
 
