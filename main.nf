@@ -22,8 +22,8 @@ workflow {
         """.stripIndent()
     )
 
-    basecalled_ch = channel.fromPath(params.data).map { file -> tuple(file.baseName, file) }
-    reference_ch = channel.fromPath(params.reference)
+    basecalled_ch = channel.fromPath(params.data, checkIfExists: true).map { file -> tuple(file.baseName, file) }
+    reference_ch = channel.fromPath(params.reference, checkIfExists: true)
 
     consensus(basecalled_ch, reference_ch)
 }
