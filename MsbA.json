@@ -7,8 +7,10 @@
     "extract_barcode_adapter": "TCAGGAtccgtcttc...CAATATATTAAATTA",
     "barcode_regex": "^([ATGC]{3}[AT][GC]){6}[ATGC]{3}$",
     "barcode_min_coverage": 10,
-    "barcode_pattern": ["Atccgtcttc", "CAATATATTA"],
-    "orf_pattern": ["agtATGCAT", "GGtcgtGCAT"],
+    "barcode_5p": "Atccgtcttc",
+    "barcode_3p": "CAATATATTA",
+    "orf_5p": "agtATGCAT",
+    "orf_3p": "GGtcgtGCAT",
     "translate_barcode": false,
     "outdir": "results"
 }
