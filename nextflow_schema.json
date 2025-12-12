@@ -22,7 +22,6 @@
         "data": {
           "type": "string",
           "default": "data/calls.bam",
-          "format": "file-path",
           "description": "Sequencing data in BAM format basecalled with Dorado.",
           "pattern": "^\\S+\\.bam$"
         },
