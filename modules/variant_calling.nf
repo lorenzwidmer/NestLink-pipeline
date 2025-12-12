@@ -17,8 +17,8 @@ process VARIANT_CALLING {
         --assembly_path ${assembly} \
         --reference_path ${reference} \
         --sample_id ${sample_id} \
-        --barcode_pattern ${params.barcode_pattern.join(' ')} \
-        --orf_pattern ${params.orf_pattern.join(' ')} \
+        --barcode_pattern ${params.barcode_5p}\t${params.barcode_3p} \
+        --orf_pattern ${params.orf_5p}\t${params.orf_3p} \
         ${params.translate_barcode ? '--translate_barcode' : ''}
         
     gzip ${sample_id}_barcodemap.txt

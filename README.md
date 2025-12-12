@@ -30,12 +30,15 @@ Finally, variants are called with the pipeline, linking barcodes or flycodes wit
 | `filter_quality`          | Float                | Minimum mean read quality threshold.                                                |
 | `filter_min_length`       | Integer              | Read filtering minimum length threshold.                                            |
 | `filter_max_length`       | Integer              | Read filtering maximum length threshold.                                            |
-| `extract_barcode_adapter` | String               | Linked adapter for barcode extraction.                                              |
+| `extract_barcode_adapter` | String               | Linked cutadapt adapter for barcode extraction.†2                                   |
 | `barcode_regex`           | String               | Regular expression matching the barcode.                                            |
 | `barcode_min_coverage`    | Integer              | The minimal amount a barcode has to be seen to be considered a high-quality barcode.|
-| `barcode_pattern`         | List(String, String) | Sequences flanking the barcode.                                                     |
-| `orf_pattern`             | List(String, String) | Sequences flanking ORF.                                                             |
+| `barcode_5p`              | String               | 5' sequence flanking the barcode.                                                   |
+| `barcode_3p`              | String               | 3' sequence flanking the barcode.                                                   |
+| `orf_5p`                  | String               | 5' sequence flanking the ORF.                                                       |
+| `orf_3p`                  | String               | 3' sequence flanking the ORF.                                                       |
 | `translate_barcode`       | Boolean              | Translates barcode, used with flycodes.                                             |
 | `outdir`                  | String               | Output directory for results.                                                       |
 
 † for multiple BAM files use `*`, e.g. `data/barcode*.bam`.
+†2 see [Linked adapters (combined 5’ and 3’ adapter)](https://cutadapt.readthedocs.io/en/stable/guide.html#linked-adapters).

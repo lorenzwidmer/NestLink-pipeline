@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
+  "title": " pipeline parameters",
+  "description": "",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "required": ["outdir", "data", "reference"],
+      "properties": {
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+          "fa_icon": "fas fa-folder-open",
+          "default": "results"
+        },
+        "data": {
+          "type": "string",
+          "default": "data/calls.bam",
+          "description": "Sequencing data in BAM format basecalled with Dorado.",
+          "pattern": "^\\S+\\.bam$"
+        },
+        "reference": {
+          "type": "string",
+          "default": "data/reference.fasta",
+          "format": "file-path",
+          "description": "Reference sequence in FASTA format.",
+          "pattern": "^\\S+\\.(fa|fasta)$"
+        }
+      }
+    },
+    "filtering_options": {
+      "title": "Filtering options",
+      "type": "object",
+      "description": "For read filtering with filtlong.",
+      "default": "",
+      "properties": {
+        "filter_quality": {
+          "type": "number",
+          "default": 96.84,
+          "minimum": 90,
+          "maximum": 100,
+          "description": "Minimum mean read quality threshold."
+        },
+        "filter_min_length": {
+          "type": "integer",
+          "default": 1600,
+          "description": "Read filtering minimum length threshold."
+        },
+        "filter_max_length": {
+          "type": "integer",
+          "default": 1900,
+          "description": "Read filtering maximum length threshold."
+        }
+      },
+      "required": ["filter_quality", "filter_min_length", "filter_max_length"]
+    },
+    "barcode_options": {
+      "title": "Barcode options",
+      "type": "object",
+      "description": "For barcode extraction and processing.",
+      "default": "",
+      "properties": {
+        "extract_barcode_adapter": {
+          "type": "string",
+          "default": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
+          "pattern": "^[acgtACGT]+\\.\\.\\.[acgtACGT]+$",
+          "description": "Linked cutadapt adapter for barcode extraction."
+        },
+        "barcode_regex": {
+          "type": "string",
+          "default": "^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$",
+          "description": "Regular expression matching the barcode. Used for determining high-quality barcodes."
+        },
+        "barcode_min_coverage": {
+          "type": "integer",
+          "default": 10,
+          "description": "The minimal amount a barcode has to be seen to be considered a high-quality barcode."
+        }
+      },
+      "required": [
+        "extract_barcode_adapter",
+        "barcode_regex",
+        "barcode_min_coverage"
+      ]
+    },
+    "variant_calling_options": {
+      "title": "Variant calling options",
+      "type": "object",
+      "description": "For variant calling and preparation of the barcode map.",
+      "default": "",
+      "properties": {
+        "barcode_5p": {
+          "type": "string",
+          "default": "ccccTCAAGA",
+          "pattern": "^[acgtACGT]{5,30}$",
+          "description": "5' sequence flanking the barcode."
+        },
+        "barcode_3p": {
+          "type": "string",
+          "default": "CTCGTGCCCAGAGG",
+          "pattern": "^[acgtACGT]{5,30}$",
+          "description": "3' sequence flanking the barcode."
+        },
+        "orf_5p": {
+          "type": "string",
+          "default": "TGATCCGCC",
+          "pattern": "^[acgtACGT]{5,30}$",
+          "description": "5' sequence flanking the ORF."
+        },
+        "orf_3p": {
+          "type": "string",
+          "default": "GCAAGCTCCAGTGGC",
+          "pattern": "^[acgtACGT]{5,30}$",
+          "description": "3' sequence flanking the ORF."
+        },
+        "translate_barcode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Translate barcodes, used with flycodes."
+        }
+      },
+      "required": [
+        "barcode_5p",
+        "barcode_3p",
+        "orf_5p",
+        "orf_3p",
+        "translate_barcode"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/input_output_options"
+    },
+    {
+      "$ref": "#/$defs/filtering_options"
+    },
+    {
+      "$ref": "#/$defs/barcode_options"
+    },
+    {
+      "$ref": "#/$defs/variant_calling_options"
+    }
+  ]
+}
