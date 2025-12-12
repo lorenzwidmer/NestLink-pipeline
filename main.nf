@@ -1,5 +1,9 @@
 #!/usr/bin/env nextflow
 
+/* Validation */
+include { validateParameters } from 'plugin/nf-schema'
+include { paramsSummaryLog } from 'plugin/nf-schema'
+
 /* Modules */
 include { BAM_TO_FASTQ      } from './modules/bam_to_fastq.nf'
 include { DORADO_ALIGNER    } from './modules/dorado_aligner.nf'
@@ -21,6 +25,9 @@ workflow {
         └─────────────────────────────────────────────┘
         """.stripIndent()
     )
+
+    validateParameters()
+    log.info paramsSummaryLog(workflow)
 
     basecalled_ch = channel.fromPath(params.data, checkIfExists: true).map { file -> tuple(file.baseName, file) }
     reference_ch = channel.fromPath(params.reference, checkIfExists: true)

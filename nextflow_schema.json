@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com///nextflow_schema.json",
+  "title": " pipeline parameters",
+  "description": "",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "required": ["outdir", "data", "reference"],
+      "properties": {
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+          "fa_icon": "fas fa-folder-open",
+          "default": "results"
+        },
+        "data": {
+          "type": "string",
+          "default": "data/calls.bam",
+          "format": "file-path"
+        },
+        "reference": {
+          "type": "string",
+          "default": "data/reference.fasta",
+          "format": "file-path"
+        }
+      }
+    },
+    "filtering_options": {
+      "title": "Filtering options",
+      "type": "object",
+      "description": "For read filtering with filtlong.",
+      "default": "",
+      "properties": {
+        "filter_quality": {
+          "type": "number",
+          "default": 96.84
+        },
+        "filter_min_length": {
+          "type": "integer",
+          "default": 1900
+        },
+        "filter_max_length": {
+          "type": "integer",
+          "default": 2000
+        }
+      },
+      "required": ["filter_quality", "filter_min_length", "filter_max_length"]
+    },
+    "new_group_2": {
+      "title": "New Group 2",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "extract_barcode_adapter": {
+          "type": "string",
+          "default": "cagggccccTCAAGA...CTCGTGCCCAGAGGC"
+        },
+        "barcode_regex": {
+          "type": "string",
+          "default": "^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$"
+        },
+        "barcode_min_coverage": {
+          "type": "integer",
+          "default": 10
+        }
+      },
+      "required": [
+        "extract_barcode_adapter",
+        "barcode_regex",
+        "barcode_min_coverage"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/input_output_options"
+    },
+    {
+      "$ref": "#/$defs/filtering_options"
+    },
+    {
+      "$ref": "#/$defs/new_group_2"
+    }
+  ],
+  "properties": {
+    "barcode_5p": {
+      "type": "string",
+      "default": "ccccTCAAGA"
+    },
+    "barcode_3p": {
+      "type": "string",
+      "default": "CTCGTGCCCAGAGG"
+    },
+    "orf_5p": {
+      "type": "string",
+      "default": "TGATCCGCC"
+    },
+    "orf_3p": {
+      "type": "string",
+      "default": "GCAAGCTCCAGTGGC"
+    },
+    "translate_barcode": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "barcode_3p",
+    "orf_5p",
+    "orf_3p",
+    "translate_barcode",
+    "barcode_5p"
+  ]
+}
