@@ -1,5 +1,5 @@
 process FILTER_READS {
-    conda "bioconda::filtlong=0.3.0 conda-forge::pigz=2.8"
+    conda "bioconda::filtlong=0.3.1 conda-forge::pigz=2.8"
     tag "${sample_id}"
 
     input:

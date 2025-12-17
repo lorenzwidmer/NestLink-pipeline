@@ -1,5 +1,4 @@
 process DORADO_ALIGNER {
-    container 'ontresearch/dorado:latest'
     tag "${sample_id}"
 
     input:

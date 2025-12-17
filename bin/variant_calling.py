@@ -124,11 +124,25 @@ def get_variants(sequences, reference, translate_barcode):
         orf_aa = translate(orf_nt)
 
         if (len(orf_aa) != len(reference_orf_aa)):
-            data.append({"cluster_id": cluster_id, "barcode": barcode, "variant_type": "indel"})
+            data.append({
+                "cluster_id": cluster_id,
+                "barcode": barcode,
+                "variant_type": "indel",
+                "position": None,
+                "reference_aa": None,
+                "variant_aa": None
+            })
             continue
 
         if (orf_aa == reference_orf_aa):
-            data.append({"cluster_id": cluster_id, "barcode": barcode, "variant_type": "wt"})
+            data.append({
+                "cluster_id": cluster_id,
+                "barcode": barcode,
+                "variant_type": "wt",
+                "position": None,
+                "reference_aa": None,
+                "variant_aa": None
+            })
             continue
 
         if (orf_aa != reference_orf_aa):

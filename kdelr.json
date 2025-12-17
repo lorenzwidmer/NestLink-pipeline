@@ -7,8 +7,10 @@
     "extract_barcode_adapter": "cagggccccTCAAGA...CTCGTGCCCAGAGGC",
     "barcode_regex": "^GGTAGT(GCA|GTT|GAT|CCA|GAA|ACT|GGT|TCT|TAC|CTG|TGG|CAG|TTC|AAC){6,8}(TGGCGG|TGGCTGCGG|TGGCAGTCTCGG|TGGCAGGAAGGAGGTCGG)$",
     "barcode_min_coverage": 10,
-    "barcode_pattern": ["ccccTCAAGA", "CTCGTGCCCAGAGG"],
-    "orf_pattern": ["TGATCCGCC", "GCAAGCTCCAGTGGC"],
+    "barcode_5p": "ccccTCAAGA",
+    "barcode_3p": "CTCGTGCCCAGAGG",
+    "orf_5p": "TGATCCGCC",
+    "orf_3p": "GCAAGCTCCAGTGGC",
     "translate_barcode": true,
     "outdir": "results"
 }
