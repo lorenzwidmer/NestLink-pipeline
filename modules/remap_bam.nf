@@ -13,9 +13,6 @@ process REMAP_BAM {
     remap_bam.py \
         --barcode_map ${barcode_map} \
         --input_bam ${alignment} \
-        --output_bam ${sample_id}_unsorted.bam
-
-    samtools sort -@ ${task.cpus} ${sample_id}_unsorted.bam -o ${sample_id}.bam
-    samtools index -@ ${task.cpus} ${sample_id}.bam
+        | samtools sort -@ ${task.cpus} --write-index -o ${sample_id}.bam##idx##${sample_id}.bam.bai
     """
 }
